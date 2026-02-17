@@ -1,50 +1,34 @@
-# Welcome to your Expo app 👋
+# AlarmFlow
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+### 1. Requirements
 
-## Get started
+- Docker Desktop (WSL 2 enabled on Windows)
+- Expo Go app on mobile
 
-1. Install dependencies
+### 2. Quick Start
 
-   ```bash
-   npm install
-   ```
+**VS Code Users:**
 
-2. Start the app
+- Open folder -> `F1` -> `Dev Containers: Reopen in Container`. (Or you could just pay attention to the bottom right curner notificaion of the VS Code prompting to Reopen in Container)
 
-   ```bash
-   npx expo start
-   ```
+**Terminal Users:**
 
-In the output, you'll find options to open the app in a
+- Run `docker-compose up --build`. (If you are using VS Code you do not need to run it _(Also I didn't check if it works)_)
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### 3. Dependencies
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+**Do not run** `npm install` on your host machine. Use the container terminal or scripts:
 
-## Get a fresh project
+- **Windows:** `.\scripts\dnpm.ps1 install <package>`
+- **Linux/macOS:** `./scripts/dnpm.sh install <package>`
 
-When you're ready, run:
+### 4. Git Workflow
 
-```bash
-npm run reset-project
-```
+- **Update:** `git pull`
+- **Submit:** `git push`
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### 5. Troubleshooting
 
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- **Run on Mobile:** `npx expo start --tunnel` then scan QR Code and in the console login or chose option to enter as in anonymous mode
+- **Connection issues:** Press `r` in terminal to reload tunnel.
+- **Permission errors:** Run `chmod +x scripts/dnpm.sh` (Linux/Mac). I didn't tested if that works ... hopfuly it does ^^ ... however if you are using VS Code IDE you should not be using this commands anyways.
