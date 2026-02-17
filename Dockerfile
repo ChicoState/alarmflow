@@ -10,6 +10,9 @@ RUN npm install -g expo-cli
 COPY package*.json ./
 RUN npm install
 
+# Install ngrok for tunneling support
+RUN npm install @expo/ngrok
+
 # Copy the rest of the code
 COPY . .
 
