@@ -8,7 +8,9 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "docker:install": "./scripts/dnpm.sh install",
+    "docker:win:install": "powershell ./scripts/dnpm.ps1 install"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

@@ -1,0 +1,19 @@
+{
+  "name": "Expo Team Env",
+  "service": "expo-app",
+  "workspaceFolder": "/app",
+  "configFile": "../docker-compose.yml",
+  "shutdownAction": "stopCompose",
+  "customizations": {
+    "vscode": {
+      "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode"],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "sh"
+      }
+    }
+  },
+  // This enables "Git" features inside the container
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {}
+  }
+}
