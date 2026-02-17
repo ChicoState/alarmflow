@@ -8,11 +8,9 @@
     "vscode": {
       "extensions": ["dbaeumer.vscode-eslint", "esbenp.prettier-vscode"],
       "settings": {
-        "terminal.integrated.defaultProfile.linux": "sh"
+        "terminal.integrated.defaultProfile.linux": "sh" // Alpine uses 'sh' or 'bash' now
       }
     }
-  },
-  "features": {
-    "ghcr.io/devcontainers/features/git:1": {}
   }
+  // "features" section removed because we installed git in Dockerfile
 }

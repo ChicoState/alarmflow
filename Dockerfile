@@ -3,23 +3,21 @@ FROM node:20-alpine
 # Set working directory
 WORKDIR /app
 
-# Install global Expo CLI and other tools
+# --- NEW: Install Bash and Git manually ---
+# This fixes the "env: can't execute bash" error
+RUN apk add --no-cache bash git openssh
+# ------------------------------------------
+
+# Install global Expo CLI
 RUN npm install -g expo-cli
 
-# Copy package.json first (better caching)
+# Copy package.json first
 COPY package*.json ./
 RUN npm install
-
-# Install ngrok for tunneling support
-RUN npm install @expo/ngrok
 
 # Copy the rest of the code
 COPY . .
 
-# Expose the ports Expo uses
-# 8081: Metro Bundler
-# 19000-19002: Expo legacy ports (if using older SDKs)
 EXPOSE 8081 19000 19001 19002
 
-# Start command
 CMD ["npx", "expo", "start", "--tunnel"]
