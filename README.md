@@ -1,4 +1,4 @@
-# AlarmFLow
+# AlarmFlow
 
 This is a guide that explains how to set up a React Native development environment using Android Studio
 
