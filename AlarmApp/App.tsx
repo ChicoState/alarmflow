@@ -36,7 +36,7 @@ export default function App() {
   const [showEndPicker, setShowEndPicker] = useState<boolean>(false);
   const [showIntervalPicker, setShowIntervalPicker] = useState<boolean>(false);
 
-  const simulateCreateIntervalAlarms = () => {
+  const CreateIntervalAlarms = () => {
     let current = new Date(startTime);
     const end = new Date(endTime);
     const intervalMs = intervalMinutes * 60 * 1000;
@@ -129,7 +129,7 @@ export default function App() {
 
       <Button
         title="Create Alarm Set"
-        onPress={simulateCreateIntervalAlarms}
+        onPress={CreateIntervalAlarms}
         color="#4CAF50"
       />
 
