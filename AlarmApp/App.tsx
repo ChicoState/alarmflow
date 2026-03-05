@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -25,6 +25,7 @@ interface AlarmSet {
 export default function App() {
   const [alarms, setAlarms] = useState<AlarmSet[]>([]);
   const [startTime, setStartTime] = useState<Date>(new Date());
+  const [alarmSet, setAlarmSet] = useState<boolean>(false);
   const [endTime, setEndTime] = useState<Date>(() => {
     const d = new Date();
     d.setHours(d.getHours() + 1);
@@ -35,6 +36,23 @@ export default function App() {
   const [showStartPicker, setShowStartPicker] = useState<boolean>(false);
   const [showEndPicker, setShowEndPicker] = useState<boolean>(false);
   const [showIntervalPicker, setShowIntervalPicker] = useState<boolean>(false);
+
+  // check every second
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!alarmSet) return;
+
+      const now = new Date();
+      // when current time == alarm time, Wake up!!!
+      if (now.getHours() === endTime.getHours() && now.getMinutes() === endTime.getMinutes() && now.getSeconds() === 0)
+      {
+        Alert.alert("Alarm!!!!");
+        setAlarmSet(false);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [endTime, alarmSet]);
 
   const CreateIntervalAlarms = () => {
     let current = new Date(startTime);
@@ -58,6 +76,7 @@ export default function App() {
     };
 
     setAlarms((prev) => [...prev, newAlarmSet]);
+    setAlarmSet(true); // for useEffect
     Alert.alert('Alarms Created!', `${count} alarms would be scheduled!`);
   };
 
