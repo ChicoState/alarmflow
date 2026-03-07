@@ -1,4 +1,4 @@
-import Sound         from "react-native-sound";
+import Sound         from 'react-native-sound';
 import SystemSetting from 'react-native-system-setting'
 
 
