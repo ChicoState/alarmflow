@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# colors
+RED="\e[1;31m"
+GREEN="\e[1;32m"
+YELLOW="\e[1;33m"
+CYAN="\e[1;36m"
+RESET="\e[1;0m"
+
+# commands
+RUN="npm run android"
+
+
+# run
+echo -e "${YELLOW} compiling and starting emulator... ${RESET}"
+$RUN

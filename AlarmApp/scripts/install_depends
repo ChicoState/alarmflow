@@ -1,0 +1,31 @@
+#!/bin/bash
+
+# colors
+RED="\e[1;31m"
+GREEN="\e[1;32m"
+YELLOW="\e[1;33m"
+CYAN="\e[1;36m"
+RESET="\e[1;0m"
+
+# commands
+INSTALL="npm install"
+FIX_INSTALL="npm audit fix"
+
+# list of dependencies to be install when working on the project
+depends_list=( \
+    "react-native-sound" \
+    "react-native-system-setting" \
+)
+
+
+# run
+echo -e "${YELLOW} installing npm version ${RESET}"
+$INSTALL 24
+
+echo -e "${YELLOW} installing dependencies... ${RESET}"
+for depend in "${depends_list[@]}"; do
+    $INSTALL $depend
+done
+
+echo -e "${YELLOW} fixing... ${RESET}"
+$FIX_INSTALL
