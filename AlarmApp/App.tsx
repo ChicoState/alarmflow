@@ -81,7 +81,7 @@ export default function App() {
       count++;
       current = new Date(current.getTime() + intervalMs);
     }
-+++
+
     // {/*set alarm*/} //should not be in CreateIntervalAlarms
     const newAlarmSet: AlarmSet = {
       id: Date.now().toString(),
@@ -102,10 +102,33 @@ export default function App() {
     );
   };
 
+/*
   const deleteAlarmSet = (id: string) => {
     setAlarms((prev) => prev.filter((a) => a.id !== id));
     Alert.alert('Deleted', 'Alarm set removed (simulation)');
   };
+*/
+
+const confirmDeleteAlarmSet = (id: string) => {
+    Alert.alert(
+        "Delete alarm set?",
+        "This will remove entire batch.",
+        [
+            {
+                text: "Cancel", style: "cancel"},
+            {
+                text: "Delete",
+                style: "destructive",
+                onPress: () => {
+                  setAlarms(prev => prev.filter(a => a.id !== id));
+                  Alert.alert("Deleted", "Alarm set removed.")
+                },
+            },
+        ],
+        {cancelable: true}
+      );
+
+    };
 
   const intervalOptions = [1, 2, 3, 5, 10, 15, 20, 30];
 
@@ -120,7 +143,7 @@ export default function App() {
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.alarmItem}
-            onLongPress={() => deleteAlarmSet(item.id)}
+            //onLongPress={() => confirmDeleteAlarmSet(item.id)}
           >
             <Switch
               value={item.active}
@@ -132,6 +155,12 @@ export default function App() {
                End Time: {item.end} {'\n'}
                Interval: {item.interval} min 
             </Text>
+            <TouchableOpacity //nested TouchableOpacity could conflict with onPress
+            onPress={() => confirmDeleteAlarmSet(item.id)}
+            style={styles.deleteButton}
+            >
+            <Text style={styles.deleteButtonText}>Delete</Text>
+            </TouchableOpacity>
           </TouchableOpacity>
         )}
         ListEmptyComponent={<Text style={styles.emptyText}>No alarms yet</Text>}
@@ -230,6 +259,21 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
   },
   alarmText: { marginLeft: 12, fontSize: 16, flex: 1 },
+
+    //delete button for each alarm batch/set
+    deleteButton: {
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 6,
+      borderWidth: 1,
+      borderColor: '#fff', //white border
+      backgroundColor: '#d32f2f', //red fill
+    },
+    deleteButtonText: {
+      fontWeight: '600',
+      color: '#fff',
+    },
+
   emptyText: { textAlign: 'center', marginTop: 40, color: '#888', fontSize: 16 },
   summary: {
     marginVertical: 24,
