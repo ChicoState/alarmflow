@@ -25,34 +25,51 @@ interface AlarmSet {
 export default function App() {
   const [alarms, setAlarms] = useState<AlarmSet[]>([]);
   const [startTime, setStartTime] = useState<Date>(new Date());
-  const [alarmSet, setAlarmSet] = useState<boolean>(false);
   const [endTime, setEndTime] = useState<Date>(() => {
     const d = new Date();
     d.setHours(d.getHours() + 1);
     return d;
   });
   const [intervalMinutes, setIntervalMinutes] = useState<number>(10);
-
   const [showStartPicker, setShowStartPicker] = useState<boolean>(false);
   const [showEndPicker, setShowEndPicker] = useState<boolean>(false);
   const [showIntervalPicker, setShowIntervalPicker] = useState<boolean>(false);
 
+    //guard against overlapping alarms
+    const lastFiredRef = React.useRef<Record<string, string>>({});
+
   // check every second
   useEffect(() => {
     const interval = setInterval(() => {
-      if (!alarmSet) return;
-
       const now = new Date();
-      // when current time == alarm time, Wake up!!!
-      if (now.getHours() === endTime.getHours() && now.getMinutes() === endTime.getMinutes() && now.getSeconds() === 0)
-      {
-        Alert.alert("Alarm!!!!");
-        setAlarmSet(false);
-      }
+      const nowStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+     for(const set of alarms){
+         if(!set.active) continue;
+
+         //fire only once per minute to avoid overlapping alarms
+         if(now.getSeconds() !== 0) continue;
+
+         if(nowStr === set.end){
+
+             //checks the date so that alarm can fire each day
+             const minuteKey = `${now.toDateString()} ${now.getHours()}:${now.getMinutes()}`;
+
+             //guards against overlapping alarms and re-firing within the same minute
+             if (lastFiredRef.current[set.id] !== minuteKey) {
+                 lastFiredRef.current[set.id] = minuteKey;
+                   Alert.alert("Alarm!!!!", `Alarm set ended at ${set.end}`);
+
+             //option to turn off batch after endtime ring
+             //setAlarms(prev => prev.map(a => (a.id === set.id ? { ...a, active: false } : a)) );
+            }
+        }
+     }
     }, 1000);
 
+
     return () => clearInterval(interval);
-  }, [endTime, alarmSet]);
+  },[alarms]);
 
   const CreateIntervalAlarms = () => {
     let current = new Date(startTime);
@@ -65,7 +82,7 @@ export default function App() {
       current = new Date(current.getTime() + intervalMs);
     }
 
-    {/*set alarm*/}
+    // {/*set alarm*/} //should not be in CreateIntervalAlarms
     const newAlarmSet: AlarmSet = {
       id: Date.now().toString(),
       start: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -76,7 +93,6 @@ export default function App() {
     };
 
     setAlarms((prev) => [...prev, newAlarmSet]);
-    setAlarmSet(true); // for useEffect
     Alert.alert('Alarms Created!', `${count} alarms would be scheduled!`);
   };
 
@@ -86,10 +102,33 @@ export default function App() {
     );
   };
 
+/*
   const deleteAlarmSet = (id: string) => {
     setAlarms((prev) => prev.filter((a) => a.id !== id));
     Alert.alert('Deleted', 'Alarm set removed (simulation)');
   };
+*/
+
+const confirmDeleteAlarmSet = (id: string) => {
+    Alert.alert(
+        "Delete alarm set?",
+        "This will remove entire batch.",
+        [
+            {
+                text: "Cancel", style: "cancel"},
+            {
+                text: "Delete",
+                style: "destructive",
+                onPress: () => {
+                  setAlarms(prev => prev.filter(a => a.id !== id));
+                  Alert.alert("Deleted", "Alarm set removed.")
+                },
+            },
+        ],
+        {cancelable: true}
+      );
+
+    };
 
   const intervalOptions = [1, 2, 3, 5, 10, 15, 20, 30];
 
@@ -104,7 +143,7 @@ export default function App() {
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.alarmItem}
-            onLongPress={() => deleteAlarmSet(item.id)}
+            //onLongPress={() => confirmDeleteAlarmSet(item.id)}
           >
             <Switch
               value={item.active}
@@ -116,6 +155,12 @@ export default function App() {
                End Time: {item.end} {'\n'}
                Interval: {item.interval} min 
             </Text>
+            <TouchableOpacity //nested TouchableOpacity could conflict with onPress
+            onPress={() => confirmDeleteAlarmSet(item.id)}
+            style={styles.deleteButton}
+            >
+            <Text style={styles.deleteButtonText}>Delete</Text>
+            </TouchableOpacity>
           </TouchableOpacity>
         )}
         ListEmptyComponent={<Text style={styles.emptyText}>No alarms yet</Text>}
@@ -214,6 +259,21 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
   },
   alarmText: { marginLeft: 12, fontSize: 16, flex: 1 },
+
+    //delete button for each alarm batch/set
+    deleteButton: {
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 6,
+      borderWidth: 1,
+      borderColor: '#fff', //white border
+      backgroundColor: '#d32f2f', //red fill
+    },
+    deleteButtonText: {
+      fontWeight: '600',
+      color: '#fff',
+    },
+
   emptyText: { textAlign: 'center', marginTop: 40, color: '#888', fontSize: 16 },
   summary: {
     marginVertical: 24,
