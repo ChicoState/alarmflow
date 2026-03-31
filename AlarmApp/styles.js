@@ -1,3 +1,6 @@
+import { 
+  StyleSheet 
+} from 'react-native';
 
 
 const styles = StyleSheet.create({
@@ -11,6 +14,21 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
   },
   alarmText: { marginLeft: 12, fontSize: 16, flex: 1 },
+
+    //delete button for each alarm batch/set
+    deleteButton: {
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 6,
+      borderWidth: 1,
+      borderColor: '#fff', //white border
+      backgroundColor: '#d32f2f', //red fill
+    },
+    deleteButtonText: {
+      fontWeight: '600',
+      color: '#fff',
+    },
+
   emptyText: { textAlign: 'center', marginTop: 40, color: '#888', fontSize: 16 },
   summary: {
     marginVertical: 24,
