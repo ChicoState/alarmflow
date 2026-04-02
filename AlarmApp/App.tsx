@@ -1,3 +1,6 @@
+// ------------------------------------ //
+// IMPORTS                              //
+// ------------------------------------ //
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -12,8 +15,16 @@ import {
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
-import styles from "./styles.js"
+// local
+import styles from "./styles.js";
+import {
+  DATE,
+  ALARM_INTERFACE,
+  ALARM,
+  generate_alarm_id
+} from "./alarm.tsx";
 
+/*
 interface AlarmSet {
   id: string;
   start: string;           
@@ -22,22 +33,39 @@ interface AlarmSet {
   count: number;           // num of alarms
   active: boolean;
 }
+*/
+
 
 export default function App() {
-  const [alarms, setAlarms] = useState<AlarmSet[]>([]);
+  /*
+  const [alarms,    setAlarms]    = useState<AlarmSet[]>([]);
   const [startTime, setStartTime] = useState<Date>(new Date());
-  const [endTime, setEndTime] = useState<Date>(() => {
+  const [endTime,   setEndTime]   = useState<Date>(() => {
     const d = new Date();
     d.setHours(d.getHours() + 1);
     return d;
   });
-  const [intervalMinutes, setIntervalMinutes] = useState<number>(10);
-  const [showStartPicker, setShowStartPicker] = useState<boolean>(false);
-  const [showEndPicker, setShowEndPicker] = useState<boolean>(false);
+  const [intervalMinutes,    setIntervalMinutes]    = useState<number>(10);
+  const [showStartPicker,    setShowStartPicker]    = useState<boolean>(false);
+  const [showEndPicker,      setShowEndPicker]      = useState<boolean>(false);
+  const [showIntervalPicker, setShowIntervalPicker] = useState<boolean>(false);
+  */
+
+  const [alarms,    setAlarms]    = useState<ALARM[]>([]);
+  const [startTime, setStartTime] = useState<Date>(new Date());
+  const [endTime,   setEndTime]   = useState<Date>(() => {
+    const d = new Date();
+    d.setHours(d.getHours() + 1);
+    return d;
+  });
+  const [intervalMinutes,    setIntervalMinutes]    = useState<number>(10);
+  const [showStartPicker,    setShowStartPicker]    = useState<boolean>(false);
+  const [showEndPicker,      setShowEndPicker]      = useState<boolean>(false);
   const [showIntervalPicker, setShowIntervalPicker] = useState<boolean>(false);
 
-    //guard against overlapping alarms
-    const lastFiredRef = React.useRef<Record<string, string>>({});
+
+  //guard against overlapping alarms
+  const lastFiredRef = React.useRef<Record<string, string>>({});
 
   // check every second
   useEffect(() => {
@@ -51,7 +79,9 @@ export default function App() {
          //fire only once per minute to avoid overlapping alarms
          if(now.getSeconds() !== 0) continue;
 
-         if(nowStr === set.end){
+         // set end to string
+         const set_end_str = set.end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+         if(nowStr === set_end_str){
 
              //checks the date so that alarm can fire each day
              const minuteKey = `${now.toDateString()} ${now.getHours()}:${now.getMinutes()}`;
@@ -84,6 +114,7 @@ export default function App() {
     }
 
     // {/*set alarm*/} //should not be in CreateIntervalAlarms
+    /*
     const newAlarmSet: AlarmSet = {
       id: Date.now().toString(),
       start: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -92,6 +123,14 @@ export default function App() {
       count,
       active: true,
     };
+    */
+    const newAlarmSet: ALARM = {
+      id:           generate_alarm_id(),
+      start:        new DATE(new Date()),
+      end:          new DATE(new Date()),
+      min_interval: intervalMinutes,
+      active:       true
+    }
 
     setAlarms((prev) => [...prev, newAlarmSet]);
     Alert.alert('Alarms Created!', `${count} alarms would be scheduled!`);
@@ -152,9 +191,9 @@ const confirmDeleteAlarmSet = (id: string) => {
             />
             {/* summarized alarm text */}
             <Text style={styles.alarmText}>
-              Start Time: {item.start} {'\n'}
-               End Time: {item.end} {'\n'}
-               Interval: {item.interval} min 
+              Start Time: {item.start.toDigitTime()} {'\n'}
+               End Time: {item.end.toDigitTime()} {'\n'}
+               Interval: {item.min_interval} min 
             </Text>
             <TouchableOpacity //nested TouchableOpacity could conflict with onPress
             onPress={() => confirmDeleteAlarmSet(item.id)}
