@@ -15,46 +15,24 @@ import {
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
+
 // local
 import styles from "./styles.js";
 import {
   DATE,
   ALARM_INTERFACE,
   ALARM,
-  generate_alarm_id
+  generate_alarm_id,
+  generate_max_alarm_count,
+  generate_current_alarm_count
 } from "./alarm.tsx";
-
-/*
-interface AlarmSet {
-  id: string;
-  start: string;           
-  end: string;
-  interval: number;        // minutes
-  count: number;           // num of alarms
-  active: boolean;
-}
-*/
 
 
 export default function App() {
-  /*
-  const [alarms,    setAlarms]    = useState<AlarmSet[]>([]);
-  const [startTime, setStartTime] = useState<Date>(new Date());
-  const [endTime,   setEndTime]   = useState<Date>(() => {
-    const d = new Date();
-    d.setHours(d.getHours() + 1);
-    return d;
-  });
-  const [intervalMinutes,    setIntervalMinutes]    = useState<number>(10);
-  const [showStartPicker,    setShowStartPicker]    = useState<boolean>(false);
-  const [showEndPicker,      setShowEndPicker]      = useState<boolean>(false);
-  const [showIntervalPicker, setShowIntervalPicker] = useState<boolean>(false);
-  */
-
   const [alarms,    setAlarms]    = useState<ALARM[]>([]);
-  const [startTime, setStartTime] = useState<Date>(new Date());
-  const [endTime,   setEndTime]   = useState<Date>(() => {
-    const d = new Date();
+  const [startTime, setStartTime] = useState<DATE>(new DATE());
+  const [endTime,   setEndTime]   = useState<DATE>(() => {
+    const d = new DATE();
     d.setHours(d.getHours() + 1);
     return d;
   });
@@ -76,12 +54,21 @@ export default function App() {
      for(const set of alarms){
          if(!set.active) continue;
 
+         console.log(set);
+
          //fire only once per minute to avoid overlapping alarms
          if(now.getSeconds() !== 0) continue;
 
+          console.log("seconds == 0")
+
          // set end to string
-         const set_end_str = set.end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+         const set_end_str = set.end.toDigitTime();
+
+         console.log(nowStr, set_end_str)
+
          if(nowStr === set_end_str){
+
+            console.log("alarm ringing...");
 
              //checks the date so that alarm can fire each day
              const minuteKey = `${now.toDateString()} ${now.getHours()}:${now.getMinutes()}`;
@@ -103,39 +90,16 @@ export default function App() {
   },[alarms]);
 
   const CreateIntervalAlarms = () => {
-    let current = new Date(startTime);
-    const end = new Date(endTime);
-    const intervalMs = intervalMinutes * 60 * 1000;
-    let count = 0;
+    const times     = [startTime, endTime];
+    const interval  = intervalMinutes;
 
-    while (current <= end) {
-      count++;
-      current = new Date(current.getTime() + intervalMs);
-    }
+    const alarm = new ALARM(times, interval, true);
 
-    // {/*set alarm*/} //should not be in CreateIntervalAlarms
-    /*
-    const newAlarmSet: AlarmSet = {
-      id: Date.now().toString(),
-      start: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      end: endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      interval: intervalMinutes,
-      count,
-      active: true,
-    };
-    */
-    const newAlarmSet: ALARM = {
-      id:           generate_alarm_id(),
-      start:        new DATE(new Date()),
-      end:          new DATE(new Date()),
-      min_interval: intervalMinutes,
-      active:       true
-    }
-
-    setAlarms((prev) => [...prev, newAlarmSet]);
-    Alert.alert('Alarms Created!', `${count} alarms would be scheduled!`);
+    setAlarms((prev) => [...prev, alarm]);
+    //Alert.alert('Alarms Created!', `${count} alarms would be scheduled!`);
   };
 
+  //TODO: FIX
   const toggleAlarmSet = (id: string) => {
     setAlarms((prev) =>
       prev.map((a) => (a.id === id ? { ...a, active: !a.active } : a))
@@ -210,7 +174,7 @@ const confirmDeleteAlarmSet = (id: string) => {
       <View style={styles.summary}>
         <Text style={styles.summaryLabel}>Start Time</Text>
         <Text style={styles.timeText}>
-          {startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          {startTime.toDigitTime()}
         </Text>
         <TouchableOpacity onPress={() => setShowStartPicker(true)}>
           <Text style={styles.clickable}>Change Start</Text>
@@ -218,7 +182,7 @@ const confirmDeleteAlarmSet = (id: string) => {
         {/* end time picker */}
         <Text style={styles.summaryLabel}>End Time</Text>
         <Text style={styles.timeText}>
-          {endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          {endTime.toDigitTime()}
         </Text>
         <TouchableOpacity onPress={() => setShowEndPicker(true)}>
           <Text style={styles.clickable}>Change End</Text>
@@ -245,7 +209,7 @@ const confirmDeleteAlarmSet = (id: string) => {
           is24Hour={false}
           onChange={(event, selectedDate) => {
             setShowStartPicker(Platform.OS === 'ios');
-            if (selectedDate) setStartTime(selectedDate);
+            if (selectedDate) setStartTime(new DATE(selectedDate));
           }}
         />
       )}
@@ -257,7 +221,7 @@ const confirmDeleteAlarmSet = (id: string) => {
           is24Hour={false}
           onChange={(event, selectedDate) => {
             setShowEndPicker(Platform.OS === 'ios');
-            if (selectedDate) setEndTime(selectedDate);
+            if (selectedDate) setEndTime(new DATE(selectedDate));
           }}
         />
       )}
