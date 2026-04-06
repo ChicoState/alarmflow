@@ -35,6 +35,17 @@ export default function App() {
   const [showStartPicker, setShowStartPicker] = useState<boolean>(false);
   const [showEndPicker, setShowEndPicker] = useState<boolean>(false);
   const [showIntervalPicker, setShowIntervalPicker] = useState<boolean>(false);
+  const [editingAlarmId, setEditingAlarmId] = useState<string | null>(null);
+  const [editStartTime, setEditStartTime] = useState<Date>(new Date());
+  const [editEndTime, setEditEndTime] = useState<Date>(() => {
+    const d = new Date();
+    d.setHours(d.getHours() + 1);
+    return d;
+  }); //---------------Added new edit function into these lines(above and below)-------------------
+  const [editIntervalMinutes, setEditIntervalMinutes] = useState<number>(10);
+  const [showEditStartPicker, setShowEditStartPicker] = useState<boolean>(false);
+  const [showEditEndPicker, setShowEditEndPicker] = useState<boolean>(false);
+  const [showEditIntervalPicker, setShowEditIntervalPicker] = useState<boolean>(false);
 
     //guard against overlapping alarms
     const lastFiredRef = React.useRef<Record<string, string>>({});
@@ -130,6 +141,70 @@ const confirmDeleteAlarmSet = (id: string) => {
       );
 
     };
+  // edit alarms
+  const openEditAlarmSet = (alarm: AlarmSet) => {
+    const today = new Date(); 
+    const [startHourString, startMinuteString] = alarm.start.split(':'); 
+    const [endHourString, endMinuteString] = alarm.end.split(':');
+
+    const start = new Date(today);
+    start.setHours(Number(startHourString), Number(startMinuteString), 0, 0); //edit start time
+
+    const end = new Date(today);
+    end.setHours(Number(endHourString), Number(endMinuteString), 0, 0); //edit end time
+
+    // updates ui
+    setEditingAlarmId(alarm.id);
+    setEditStartTime(start);
+    setEditEndTime(end);
+
+    // makes sure edit pickers are closed at first
+    setEditIntervalMinutes(alarm.interval);
+    setShowEditStartPicker(false);
+    setShowEditEndPicker(false);
+    setShowEditIntervalPicker(false);
+  };
+
+  const saveEditAlarmSet = () => {
+    if (!editingAlarmId) return;
+
+    let current = new Date(editStartTime);
+    const end = new Date(editEndTime);
+    const intervalMs = editIntervalMinutes * 60 * 1000;
+    let count = 0;
+
+    while (current <= end) {
+      count++;
+      current = new Date(current.getTime() + intervalMs);
+    }
+
+    setAlarms((prev) =>
+      prev.map((a) =>
+        a.id === editingAlarmId
+          ? {
+              ...a,
+              start: editStartTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              end: editEndTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              interval: editIntervalMinutes,
+              count,
+            }
+          : a
+      )
+    );
+
+    setEditingAlarmId(null);
+    setShowEditStartPicker(false);
+    setShowEditEndPicker(false);
+    setShowEditIntervalPicker(false);
+    Alert.alert('Alarm Updated!', `${count} alarms would be scheduled!`);
+  };
+
+  const cancelEditAlarmSet = () => {
+    setEditingAlarmId(null);
+    setShowEditStartPicker(false);
+    setShowEditEndPicker(false);
+    setShowEditIntervalPicker(false);
+  };
 
   const intervalOptions = [1, 2, 3, 5, 10, 15, 20, 30];
 
@@ -156,16 +231,71 @@ const confirmDeleteAlarmSet = (id: string) => {
                End Time: {item.end} {'\n'}
                Interval: {item.interval} min 
             </Text>
-            <TouchableOpacity //nested TouchableOpacity could conflict with onPress
-            onPress={() => confirmDeleteAlarmSet(item.id)}
-            style={styles.deleteButton}
-            >
-            <Text style={styles.deleteButtonText}>Delete</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity
+              onPress={() => openEditAlarmSet(item)}
+              style={{
+                backgroundColor: '#2196F3',
+                paddingVertical: 8,
+                paddingHorizontal: 12,
+                borderRadius: 8,
+                marginRight: 8,
+              }}
+              >
+              <Text style={{ color: 'white', fontWeight: 'bold' }}>Edit</Text>
+              </TouchableOpacity>
+              <TouchableOpacity //nested TouchableOpacity could conflict with onPress
+              onPress={() => confirmDeleteAlarmSet(item.id)}
+              style={styles.deleteButton}
+              >
+              <Text style={styles.deleteButtonText}>Delete</Text>
+              </TouchableOpacity>
+            </View>
           </TouchableOpacity>
         )}
         ListEmptyComponent={<Text style={styles.emptyText}>No alarms yet</Text>}
       />
+
+      {editingAlarmId && (
+        <View style={styles.summary}>
+          <Text style={styles.summaryLabel}>Editing Current Alarm</Text>
+
+          <Text style={styles.summaryLabel}>Start Time</Text>
+          <Text style={styles.timeText}>
+            {editStartTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </Text>
+          <TouchableOpacity onPress={() => setShowEditStartPicker(true)}>
+            <Text style={styles.clickable}>Quick Edit Start</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.summaryLabel}>End Time</Text>
+          <Text style={styles.timeText}>
+            {editEndTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </Text>
+          <TouchableOpacity onPress={() => setShowEditEndPicker(true)}>
+            <Text style={styles.clickable}>Quick Edit End</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.summaryLabel}>Interval</Text>
+          <Text style={styles.timeText}>Every {editIntervalMinutes} minutes</Text>
+          <TouchableOpacity onPress={() => setShowEditIntervalPicker(true)}>
+            <Text style={styles.clickable}>Quick Edit Interval</Text>
+          </TouchableOpacity>
+
+          <View style={{ marginTop: 12, gap: 8 }}>
+            <Button
+              title="Save Edit"
+              onPress={saveEditAlarmSet}
+              color="#4CAF50"
+            />
+            <Button
+              title="Cancel Edit"
+              onPress={cancelEditAlarmSet}
+              color="#9E9E9E"
+            />
+          </View>
+        </View>
+      )}
 
       {/*Start time picker*/}
       <View style={styles.summary}>
@@ -240,6 +370,53 @@ const confirmDeleteAlarmSet = (id: string) => {
           <TouchableOpacity
             style={{ marginTop: 16 }}
             onPress={() => setShowIntervalPicker(false)}
+          >
+            <Text style={{ color: 'red', textAlign: 'center' }}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {showEditStartPicker && (
+        <DateTimePicker
+          value={editStartTime}
+          mode="time"
+          is24Hour={false}
+          onChange={(event, selectedDate) => {
+            setShowEditStartPicker(Platform.OS === 'ios');
+            if (selectedDate) setEditStartTime(selectedDate);
+          }}
+        />
+      )}
+
+      {showEditEndPicker && (
+        <DateTimePicker
+          value={editEndTime}
+          mode="time"
+          is24Hour={false}
+          onChange={(event, selectedDate) => {
+            setShowEditEndPicker(Platform.OS === 'ios');
+            if (selectedDate) setEditEndTime(selectedDate);
+          }}
+        />
+      )}
+
+      {showEditIntervalPicker && (
+        <View style={styles.intervalPicker}>
+          {intervalOptions.map((min) => (
+            <TouchableOpacity
+              key={min}
+              style={styles.intervalOption}
+              onPress={() => {
+                setEditIntervalMinutes(min);
+                setShowEditIntervalPicker(false);
+              }}
+            >
+              <Text style={{ fontSize: 18 }}>{min} minutes</Text>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity
+            style={{ marginTop: 16 }}
+            onPress={() => setShowEditIntervalPicker(false)}
           >
             <Text style={{ color: 'red', textAlign: 'center' }}>Cancel</Text>
           </TouchableOpacity>
