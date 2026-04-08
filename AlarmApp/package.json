@@ -1,7 +1,12 @@
 {
-  "name": "AlarmApp",
+  "name": "alarmapp",
   "version": "0.0.1",
   "private": true,
+  "description": "This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
   "scripts": {
     "android": "react-native run-android",
     "ios": "react-native run-ios",
@@ -10,11 +15,15 @@
     "test": "jest"
   },
   "dependencies": {
+    "24": "^0.0.0",
+    "@react-native-async-storage/async-storage": "^2.1.0",
     "@react-native-community/datetimepicker": "^8.6.0",
     "@react-native/new-app-screen": "0.84.0",
     "react": "19.2.3",
     "react-native": "0.84.0",
-    "react-native-safe-area-context": "^5.5.2"
+    "react-native-safe-area-context": "^5.5.2",
+    "react-native-sound": "^0.13.0",
+    "react-native-system-setting": "^1.7.6"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
