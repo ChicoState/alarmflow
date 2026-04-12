@@ -19,7 +19,7 @@ const MINS_IN_HOUR      = 60;
 // ------------------------------------ //
 // INTERFACE & CLASS                    //
 // ------------------------------------ //
-class DATE extends Date {
+export class DATE extends Date {
     // members
     date: Date;
 
@@ -54,5 +54,6 @@ class DATE extends Date {
 }
 
 
-
-export default DATE;
+export function toDateDigitTime(date: Date) : string {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}

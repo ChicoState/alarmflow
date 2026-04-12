@@ -18,34 +18,27 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 
 
 // local classes
-import DATE from './Date.js';
+import {
+  DATE,
+  toDateDigitTime
+} from './Date.tsx';
 import { 
-  ALARM 
-} from './Alarm.js';
+  ALARM, 
+  generate_alarm_id
+} from './Alarm.tsx';
 
 // local stylesheets
 import styles from "./styles.js";
 
 
 
-interface AlarmSet {
-  id: string;
-  start: string;           
-  end: string;
-  interval: number;        // minutes
-  count: number;           // num of alarms
-  active: boolean;
-}
-
-
-
 export default function App() {
-  const [alarms,    setAlarms]    = useState<AlarmSet[]>([]);
-  const [startTime, setStartTime] = useState<Date>(new Date());
-  const [endTime,   setEndTime]   = useState<Date>(() => {
+  const [alarms,    setAlarms]    = useState<ALARM[]>([]);
+  const [startTime, setStartTime] = useState<DATE>(new DATE());
+  const [endTime,   setEndTime]   = useState<DATE>(() => {
     const d = new Date();
     d.setHours(d.getHours() + 1);
-    return d;
+    return new DATE(d);
   });
   const [intervalMinutes,    setIntervalMinutes]    = useState<number>(10);
   const [showStartPicker,    setShowStartPicker]    = useState<boolean>(false);
@@ -58,8 +51,8 @@ export default function App() {
   // check every second
   useEffect(() => {
     const interval = setInterval(() => {
-      const now = new Date();
-      const nowStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const now = new DATE();
+      const nowStr = now.toDigitTime();
 
       for(const set of alarms){
         if(!set.active) continue;
@@ -72,7 +65,7 @@ export default function App() {
         console.log("seconds == 0")
 
         // set end to string
-        const set_end_str = set.end.toDigitTime();
+        const set_end_str = set.start.toDigitTime();
 
         console.log(nowStr, set_end_str)
 
@@ -86,7 +79,7 @@ export default function App() {
           //guards against overlapping alarms and re-firing within the same minute
           if (lastFiredRef.current[set.id] !== minuteKey) {
               lastFiredRef.current[set.id] = minuteKey;
-                Alert.alert("Alarm!!!!", `Alarm set ended at ${set.end}`);
+                Alert.alert("Alarm!!!!", `Alarm set ended at ${set.end.toDigitTime()}`);
           }
         }
       }
@@ -119,7 +112,8 @@ export default function App() {
       try { // load stored alarms set
         const stored = await AsyncStorage.getItem('ALARMS');
         if (stored !== null) {
-          setAlarms(JSON.parse(stored));
+          //setAlarms(JSON.parse(stored));
+          setAlarms(JSON.parse(stored).map(ALARM.fromJSON));
         }
       } catch (e) {
         console.log('Failed to load alarms', e);
@@ -135,26 +129,19 @@ export default function App() {
     const times     = [startTime, endTime];
     const interval  = intervalMinutes;
 
-    const alarm = new ALARM(times, interval, true);
+    const alarm = new ALARM(startTime.date, endTime.date, interval, true);
 
     // {/*set alarm*/} //should not be in CreateIntervalAlarms
-    const newAlarmSet: AlarmSet = {
-      id: Date.now().toString(),
-      start: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      end: endTime.toLocaleTimeString([],     { hour: '2-digit', minute: '2-digit' }),
-      interval: intervalMinutes,
-      count,
-      active: true,
-    };
+    //let newAlarmSet: ALARM = new ALARM(startTime, endTime, intervalMinutes, true);
 
-    setAlarms((prev) => [...prev, newAlarmSet]);
-    Alert.alert('Alarms Created!', `${count} alarms would be scheduled!`);
+    setAlarms((prev) => [...prev, alarm]);
+    //Alert.alert('Alarms Created!', `${count} alarms would be scheduled!`);
   };
 
-// Issues here -  something with ID string/integers.
+  // Issues here -  something with ID string/integers.
   const toggleAlarmSet = (id: string) => {
     setAlarms((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, active: !a.active } : a))
+      prev.map((a): ALARM => (a.id === id ? a.copy({...a, active: !a.active }) : a))
     );
   };
 

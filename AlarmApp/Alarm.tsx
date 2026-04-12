@@ -1,7 +1,9 @@
 // ------------------------------------ //
 // IMPORTS                              //
 // ------------------------------------ //
-import DATE from "./Date.tsx"
+import {
+    DATE
+} from "./Date.tsx"
 
 
 
@@ -20,15 +22,23 @@ type MINUTE = int;
 // ------------------------------------ //
 // INTERFACE & CLASS                    //
 // ------------------------------------ //
+
+//! ================ !//
+//!  MUST IMPLEMENT  !//
+//! ================ !//
+// TODO: toJSON / fromJSON (Serialize <--> Deserialize)
+// TODO: save / load alarms
+
 export interface ALARM_INTERFACE {
   id:           ID;
   start:        DATE;           
   end:          DATE;
-  next:         DATE;
   min_interval: MINUTE;
   active:       bool;
 
-  initNext() : DATE;
+  toJSON(): void;
+  fromJSON(obj: any) : ALARM; 
+  copy(update: Partial<ALARM>): ALARM;
 }
 
 export class ALARM implements ALARM_INTERFACE {
@@ -36,35 +46,53 @@ export class ALARM implements ALARM_INTERFACE {
     id:           ID;
     start:        DATE;           
     end:          DATE;
-    next:         DATE;
     min_interval: MINUTE;
     active:       bool;
     //TODO: add sound variable
 
-    // functions
-    constructor(times: Date[], interval: MINUTE, is_active: bool) {
-        this.id           = generate_alarm_id();    // function creates new alarm id 
-        this.start        = new DATE(times[0]);   
-        this.end          = new DATE(times[1]);
-        this.next         = this.initNext();
+    constructor(start: Date, end: Date, interval: MINUTE, is_active: bool, id: ID = "") {
+        this.start        = new DATE(start);
+        this.end          = new DATE(end);
+        this.active       = is_active;
         this.min_interval = interval;
-        this.active       = false;
+
+        // overloaded constructor undefined members
+        this.id = id;
+        if(id == ""){
+            this.id = generate_alarm_id();
+        }
     }
 
-    initNext() : DATE {
-        // get 'start' values
-        // create new instance of 'next'
-        let next_date = new DATE(this.start.date);
-
-        // update and return 'next_date'
-        next_date.updateDigitTime(0, this.min_interval);
-        return next_date;
+    toJSON() {
+        return {
+            id:           this.id,
+            active:       this.active,
+            start:        this.start,
+            end:          this.end,
+            min_interval: this.min_interval,
+        }
     }
+    static fromJSON(obj: any) : ALARM {
+        return new ALARM(
+            new Date(obj.start.date ?? obj.start), 
+            new Date(obj.end.date ?? obj.end),
+            obj.min_interval,
+            obj.active,
+            obj.id
+        );
+    }
+    copy(update: Partial<ALARM>): ALARM {
+        const alarm = new ALARM(
+            this.start.date, 
+            this.end.date,
+            this.min_interval,
+            this.active,
+            this.id
+        );
 
+        return Object.assign(alarm, update);
+    }
 }
-
-
-// TODO: move generate functions back into class as 'init...'
 
 
 // ------------------------------------ //
