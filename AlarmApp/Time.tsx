@@ -20,3 +20,18 @@ export function get_interval_time(starting_time: Date, interval_time: number, to
 
     return new_time;
 }
+
+export function check_time(current_time: Date, alarm_time: Date): boolean {
+  let CT: Date = current_time;    // current time
+  let AT: Date = alarm_time;      // alarm time
+
+  // alarm should go off when both times match
+  if(CT.getHours() === AT.getHours()){
+    if(CT.getMinutes() === AT.getMinutes()){
+      return true;
+    }
+  }
+
+  // the alarm should NOT go off when they are different
+  return false;
+}
