@@ -1,7 +1,9 @@
-
 // ------------------------------------ //
 // IMPORTS                              //
 // ------------------------------------ //
+import DATE from "./Date.tsx"
+
+
 
 // ------------------------------------ //
 // TYPE DEFINITIONS                     //
@@ -18,62 +20,47 @@ type MINUTE = int;
 // ------------------------------------ //
 // INTERFACE & CLASS                    //
 // ------------------------------------ //
-export class DATE extends Date {
-    date: Date;
-
-    constructor(date: Date = new Date()){
-        super();
-
-        this.date = date;
-    }
-
-    toDigitTime() : string {
-        return this.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
-}
-
-
-
 export interface ALARM_INTERFACE {
-  id:            ID;
-  start:         DATE;           
-  end:           DATE;
-  min_interval:  MINUTE;
-  active:        bool;
-  max_count:     int;
-  current_count: int;
+  id:           ID;
+  start:        DATE;           
+  end:          DATE;
+  next:         DATE;
+  min_interval: MINUTE;
+  active:       bool;
 
-  //updateCurrentCount(): void;
+  initNext() : DATE;
 }
 
 export class ALARM implements ALARM_INTERFACE {
     // members
-    id:            ID;
-    start:         DATE;           
-    end:           DATE;
-    min_interval:  MINUTE;
-    active:        bool;
-    max_count:     int;
-    current_count: int;
+    id:           ID;
+    start:        DATE;           
+    end:          DATE;
+    next:         DATE;
+    min_interval: MINUTE;
+    active:       bool;
+    //TODO: add sound variable
 
     // functions
     constructor(times: Date[], interval: MINUTE, is_active: bool) {
-        this.id            = generate_alarm_id();    // function creates new alarm id 
-        this.start         = new DATE(times[0]);   
-        this.end           = new DATE(times[1]);
-        this.min_interval  = interval;
-        this.active        = is_active;
-        this.max_count     = generate_max_alarm_count(this.start, this.end, this.min_interval);
-        this.current_count = generate_current_alarm_count(this.start, this.end, this.min_interval, this.max_count);
+        this.id           = generate_alarm_id();    // function creates new alarm id 
+        this.start        = new DATE(times[0]);   
+        this.end          = new DATE(times[1]);
+        this.next         = this.initNext();
+        this.min_interval = interval;
+        this.active       = false;
     }
 
-    /*
-    updateCurrentCount(): void {
-        // increment current count, bound to 'max_count'
-        this.current_count++;
-        this.current_count %= this.max_count;
+    initNext() : DATE {
+        // get 'start' values
+        // create new instance of 'next'
+        let next_date = new DATE(this.start.date);
+
+        // update and return 'next_date'
+        next_date.updateDigitTime(0, this.min_interval);
+        return next_date;
     }
-    */
+
 }
 
 
