@@ -245,11 +245,14 @@ const confirmDeleteAlarmSet = (id: string) => {
         </TouchableOpacity>
       </View>
 
-      <Button
-        title="Create Alarm Set"
+      {/* custom button so it can be styled easier*/}
+      <TouchableOpacity
         onPress={CreateIntervalAlarms}
-        color="#4CAF50"
-      />
+        style={styles.createButton}
+      >
+        <Text style={styles.createButtonText}>Create Alarm Set</Text>
+      </TouchableOpacity>
+
 
       {/* Time Pickers */}
       {showStartPicker && (

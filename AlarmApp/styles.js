@@ -26,17 +26,34 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
 
-  alarmText: { 
-    marginLeft: 12, 
-    fontSize: 16, 
+  alarmText: {
+    marginLeft: 12,
+    fontSize: 18,
     flex: 1,
-    lineHeight: 22,
+    lineHeight: 26,
   },
 
+    // style for "create alarm" button
+    //GPT was used here to scale proportionally
+    createButton: {
+      marginTop: 10,
+      paddingVertical: 16,
+      borderRadius: 10,
+      backgroundColor: '#4CAF50',
+      alignItems: 'center',
+    },
+
+    createButtonText: {
+      color: '#fff',
+      fontSize: 18,
+      fontWeight: '600',
+    },
+
     //delete button for each alarm batch/set
+    //GPT was used here to scale proportionally
     deleteButton: {
-      paddingHorizontal: 14,
-      paddingVertical: 10,
+      paddingHorizontal: 20,
+      paddingVertical: 16,
       borderRadius: 8,
       borderWidth: 1,
       borderColor: '#fff', //white border
@@ -46,7 +63,7 @@ const styles = StyleSheet.create({
     deleteButtonText: {
       fontWeight: '600',
       color: '#fff',
-      fontSize: 15,
+      fontSize: 16,
     },
 
   emptyText: { 
@@ -67,7 +84,7 @@ const styles = StyleSheet.create({
 
   summaryLabel: { 
     fontWeight: 'bold', 
-    marginTop: 12, 
+    marginTop: 12,
     marginBottom: 6,
     fontSize: 15,
   },
@@ -76,15 +93,16 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     textAlign: 'center',
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 14,
-    marginVertical: 4,
+    marginTop: 4,
+    marginBottom: 10,
     backgroundColor: '#fff',
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#e0e0e0',
 
-    // slight shadow to make touchable noticable
+    // slight shadow to make touchable noticeable
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.12,
