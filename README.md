@@ -95,3 +95,30 @@ In another terminal run:
 npx react-native run-android
 ```
 And the app should launch!
+
+## AsyncStorage Troubleshooting
+
+Install:
+
+```
+npm install @react-native-async-storage/async-storage@2.1.0
+```
+
+If you encounter an error when trying to build the app after installing this, navigate to android/settings.gradle, and add this line anywhere:
+
+```
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+```
+
+In AlarmApp/android, run:
+```
+./gradlew clean
+```
+
+Then navigate back to AlarmApp and build again
