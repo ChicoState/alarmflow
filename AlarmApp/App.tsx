@@ -60,6 +60,7 @@ export default function App() {
   const [showStartPicker, setShowStartPicker] = useState<boolean>(false);
   const [showEndPicker, setShowEndPicker] = useState<boolean>(false);
   const [showIntervalPicker, setShowIntervalPicker] = useState<boolean>(false);
+  const [editingAlarmId, setEditingAlarmId] = useState<string | null>(null);
 
   //guard against overlapping alarms
   const lastFiredRef = React.useRef<Record<string, string>>({});
@@ -153,6 +154,77 @@ export default function App() {
     Alert.alert('Alarms Created!', `${count} alarms would be scheduled!`);
   };
 
+  const openEditAlarmSet = (alarm: AlarmSet) => {
+    const today = new Date();
+    // parse stored time
+    const startParts = alarm.start.match(/(\d+):(\d+)\s?(AM|PM)?/i);
+    const endParts = alarm.end.match(/(\d+):(\d+)\s?(AM|PM)?/i);
+
+    if (!startParts || !endParts) {
+      Alert.alert("Can't edit alarm!");
+      return;
+    }
+
+    // gets the alarm's start time
+    let startHour = Number(startParts[1]);
+    const startMinute = Number(startParts[2]);
+    const startPeriod = startParts[3]?.toUpperCase();
+    // gets the alarm's end time
+    let endHour = Number(endParts[1]);
+    const endMinute = Number(endParts[2]);
+    const endPeriod = endParts[3]?.toUpperCase();
+
+    // had to do it like this or it breaks. conversion to 24hr time
+    if (startPeriod === "PM" && startHour !== 12) startHour += 12;
+    if (startPeriod === "AM" && startHour === 12) startHour = 0;
+
+    if (endPeriod === "PM" && endHour !== 12) endHour += 12;
+    if (endPeriod === "AM" && endHour === 12) endHour = 0;
+
+    const start = new Date(today);
+    start.setHours(startHour, startMinute, 0, 0);
+
+    const end = new Date(today);
+    end.setHours(endHour, endMinute, 0, 0);
+    
+    // set editing state
+    setEditingAlarmId(alarm.id);
+    setStartTime(start);
+    setEndTime(end);
+    setIntervalMinutes(alarm.interval);
+  };
+
+  const saveEditAlarmSet = () => {
+    if (!editingAlarmId) return;
+
+    let current = new Date(startTime);
+    const end = new Date(endTime);
+    const intervalMs = intervalMinutes * 60 * 1000;
+    let count = 0;
+
+    while (current <= end) {
+      count++;
+      current = new Date(current.getTime() + intervalMs);
+    }
+
+    setAlarms((prev) =>
+      prev.map((a) =>
+        a.id === editingAlarmId
+          ? {
+              ...a,
+              start: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              end: endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              interval: intervalMinutes,
+              count,
+            }
+          : a
+      )
+    );
+
+    setEditingAlarmId(null);
+    Alert.alert("Updated", "Alarm set updated.");
+  };
+
 // Issues here -  something with ID string/integers.
   const toggleAlarmSet = (id: string) => {
     setAlarms((prev) =>
@@ -173,6 +245,9 @@ const confirmDeleteAlarmSet = (id: string) => {
                 style: "destructive",
                 onPress: () => {
                   setAlarms(prev => prev.filter(a => a.id !== id));
+                  if (editingAlarmId === id) {
+                    setEditingAlarmId(null);
+                  }
                 },
             },
         ],
@@ -194,6 +269,7 @@ const confirmDeleteAlarmSet = (id: string) => {
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.alarmItem}
+            onPress={() => openEditAlarmSet(item)}
           >
             <Switch
               value={item.active}
@@ -246,8 +322,8 @@ const confirmDeleteAlarmSet = (id: string) => {
       </View>
 
       <Button
-        title="Create Alarm Set"
-        onPress={CreateIntervalAlarms}
+        title={editingAlarmId ? "Save Edit" : "Create Alarm Set"}
+        onPress={editingAlarmId ? saveEditAlarmSet : CreateIntervalAlarms}
         color="#4CAF50"
       />
 
