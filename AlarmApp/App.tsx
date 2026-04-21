@@ -48,6 +48,8 @@ export default function App() {
   //guard against overlapping alarms
   const lastFiredRef = React.useRef<Record<string, string>>({});
 
+  //const default_sound_name = "mgs_codec.mp3";
+
   // check every second
   useEffect(() => {
     const interval = setInterval(() => {
@@ -62,12 +64,8 @@ export default function App() {
         //fire only once per minute to avoid overlapping alarms
         if(now.getSeconds() !== 0) continue;
 
-        console.log("seconds == 0")
-
         // set end to string
         const set_end_str = set.start.toDigitTime();
-
-        console.log(nowStr, set_end_str)
 
         if(nowStr === set_end_str){
 
@@ -78,8 +76,24 @@ export default function App() {
 
           //guards against overlapping alarms and re-firing within the same minute
           if (lastFiredRef.current[set.id] !== minuteKey) {
-              lastFiredRef.current[set.id] = minuteKey;
-                Alert.alert("Alarm!!!!", `Alarm set ended at ${set.end.toDigitTime()}`);
+            lastFiredRef.current[set.id] = minuteKey;
+
+            // start alarm
+            set.sound.play();
+
+            Alert.alert(
+              "Alarm!!!!", `Alarm set ended at ${set.end.toDigitTime()}`,
+              [
+                {
+                  text: "OK",
+                  onPress: () => {
+                    // stop alarm
+                    console.log("DEBUG] Alert - 'OK' pressed");
+                    set.sound.stop();
+                  }
+                },
+              ],
+            );
           }
         }
       }
@@ -129,7 +143,7 @@ export default function App() {
     const times     = [startTime, endTime];
     const interval  = intervalMinutes;
 
-    const alarm = new ALARM(startTime.date, endTime.date, interval, true);
+    const alarm = new ALARM(startTime.date, endTime.date, interval);
 
     // {/*set alarm*/} //should not be in CreateIntervalAlarms
     //let newAlarmSet: ALARM = new ALARM(startTime, endTime, intervalMinutes, true);

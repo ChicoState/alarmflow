@@ -4,7 +4,7 @@
 import {
     DATE
 } from "./Date.tsx"
-
+import SOUND from "./Sound.tsx"
 
 
 // ------------------------------------ //
@@ -22,22 +22,16 @@ type MINUTE = int;
 // ------------------------------------ //
 // INTERFACE & CLASS                    //
 // ------------------------------------ //
-
-//! ================ !//
-//!  MUST IMPLEMENT  !//
-//! ================ !//
-// TODO: toJSON / fromJSON (Serialize <--> Deserialize)
-// TODO: save / load alarms
-
 export interface ALARM_INTERFACE {
   id:           ID;
   start:        DATE;           
   end:          DATE;
   min_interval: MINUTE;
   active:       bool;
+  
+  sound: SOUND;
 
   toJSON(): void;
-  fromJSON(obj: any) : ALARM; 
   copy(update: Partial<ALARM>): ALARM;
 }
 
@@ -48,13 +42,17 @@ export class ALARM implements ALARM_INTERFACE {
     end:          DATE;
     min_interval: MINUTE;
     active:       bool;
-    //TODO: add sound variable
 
-    constructor(start: Date, end: Date, interval: MINUTE, is_active: bool, id: ID = "") {
+    sound: SOUND;
+
+    constructor(start: Date, end: Date, interval: MINUTE, 
+            sound_name: string = "mgs_codec.mp3", is_active: bool = true, id: ID = "") {
         this.start        = new DATE(start);
         this.end          = new DATE(end);
         this.active       = is_active;
         this.min_interval = interval;
+
+        this.sound = new SOUND(sound_name);
 
         // overloaded constructor undefined members
         this.id = id;
@@ -70,6 +68,7 @@ export class ALARM implements ALARM_INTERFACE {
             start:        this.start,
             end:          this.end,
             min_interval: this.min_interval,
+            sound_name:   this.sound.name
         }
     }
     static fromJSON(obj: any) : ALARM {
@@ -77,6 +76,7 @@ export class ALARM implements ALARM_INTERFACE {
             new Date(obj.start.date ?? obj.start), 
             new Date(obj.end.date ?? obj.end),
             obj.min_interval,
+            obj.sound_name,
             obj.active,
             obj.id
         );
@@ -86,6 +86,7 @@ export class ALARM implements ALARM_INTERFACE {
             this.start.date, 
             this.end.date,
             this.min_interval,
+            this.sound.name,
             this.active,
             this.id
         );
