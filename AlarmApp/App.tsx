@@ -9,6 +9,7 @@ import {
   Switch,
   Alert,
   Platform,
+  Modal,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -61,6 +62,7 @@ export default function App() {
   const [showEndPicker, setShowEndPicker] = useState<boolean>(false);
   const [showIntervalPicker, setShowIntervalPicker] = useState<boolean>(false);
   const [editingAlarmId, setEditingAlarmId] = useState<string | null>(null);
+  const [showAlarmModal, setShowAlarmModal] = useState(false);
 
   //guard against overlapping alarms
   const lastFiredRef = React.useRef<Record<string, string>>({});
@@ -192,6 +194,8 @@ export default function App() {
     setStartTime(start);
     setEndTime(end);
     setIntervalMinutes(alarm.interval);
+
+    setShowAlarmModal(true);
   };
 
   const saveEditAlarmSet = () => {
@@ -294,6 +298,64 @@ const confirmDeleteAlarmSet = (id: string) => {
         ListEmptyComponent={<Text style={styles.emptyText}>No alarms yet</Text>}
       />
 
+      <Modal
+        visible = {showAlarmModal}
+        animationType = "slide"
+        transparent = {true}
+      >
+        <View style = {styles.modalOverlay}>
+          <View style = {styles.modalBox}>
+            <Text style={styles.title}>
+              {editingAlarmId ? "Edit Alarm" : "Create Alarm"}
+            </Text>
+
+            {/* start */}
+            <Text style = {styles.summaryLabel}>Start Time</Text>
+            <TouchableOpacity onPress = {() => setShowStartPicker(true)}>
+              <Text style = {styles.timeText}>
+                {startTime.toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </Text>
+            </TouchableOpacity>
+
+            {/* end */}
+            <Text style = {styles.summaryLabel}>End Time</Text>
+            <TouchableOpacity onPress = {() => setShowEndPicker(true)}>
+              <Text style = {styles.timeText}>
+                {endTime.toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </Text>
+            </TouchableOpacity>
+
+            {/* interval picker */}
+            <Text style = {styles.summaryLabel}>Interval</Text>
+            <TouchableOpacity onPress={() => setShowIntervalPicker(true)}>
+              <Text style = {styles.timeText}>
+                Every {intervalMinutes} minutes
+              </Text>
+            </TouchableOpacity>
+
+            <Button
+              title = {editingAlarmId ? "Save Edit" : "Create"}
+              onPress={() => {
+                editingAlarmId ? saveEditAlarmSet() : CreateIntervalAlarms();
+                setShowAlarmModal(false);
+              }}
+            />
+
+            <Button
+              title = "Cancel"
+              color = "red"
+              onPress={() => setShowAlarmModal(false)}
+            />
+          </View>
+        </View>
+      </Modal>
+
       {/*Start time picker*/}
       <View style={styles.summary}>
         <Text style={styles.summaryLabel}>Start Time</Text>
@@ -302,30 +364,6 @@ const confirmDeleteAlarmSet = (id: string) => {
             {startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </Text>
         </TouchableOpacity>
-
-        {/* end time picker */}
-        <Text style={styles.summaryLabel}>End Time</Text>
-        <TouchableOpacity onPress={() => setShowEndPicker(true)}>
-          <Text style={styles.timeText}>
-            {endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </Text>
-        </TouchableOpacity>
-
-        {/* interval picker */}
-        <Text style={styles.summaryLabel}>Interval</Text>
-        <TouchableOpacity
-          onPress={() => setShowIntervalPicker(true)}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.timeText}>Every {intervalMinutes} minutes</Text>
-        </TouchableOpacity>
-      </View>
-
-      <Button
-        title={editingAlarmId ? "Save Edit" : "Create Alarm Set"}
-        onPress={editingAlarmId ? saveEditAlarmSet : CreateIntervalAlarms}
-        color="#4CAF50"
-      />
 
       {/* Time Pickers */}
       {showStartPicker && (
@@ -374,6 +412,18 @@ const confirmDeleteAlarmSet = (id: string) => {
           </TouchableOpacity>
         </View>
       )}
+
+      {/* + button */}
+      <TouchableOpacity 
+        style={styles.fab}
+        onPress={() => {
+          setEditingAlarmId(null);
+          setShowAlarmModal(true);
+        }}
+      > 
+        <Text style={styles.fabText}>+</Text>
+      </TouchableOpacity>
+      </View>
     </View>
   );
 }
