@@ -7,7 +7,6 @@ import {
   FlatList,
   TouchableOpacity,
   Switch,
-  Alert,
   Platform,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -21,6 +20,7 @@ import {
   requestAlarmPermissions,
   scheduleAlarmSet,
   cancelAlarmSet,
+  showAlertAsync,
 } from './AlarmScheduler';
 
 
@@ -69,18 +69,20 @@ export default function App() {
 
 
   // ─── PERSIST alarms to disk whenever they change ───
+  // Debounced so rapid state changes (e.g. creating a 50-alarm set) don't
+  // queue up dozens of AsyncStorage writes. Without this, the last write
+  // can still be in flight when the user backgrounds the app, which
+  // surfaces as a "saving state" ANR dialog on Android.
   useEffect(() => {
     if (!isLoaded) return;
 
-    const persist = async () => {
-      try {
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(alarms));
-      } catch (e) {
-        console.log('Failed to save alarms', e);
-      }
-    };
+    const handle = setTimeout(() => {
+      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(alarms)).catch((e) =>
+        console.log('Failed to save alarms', e),
+      );
+    }, 250);
 
-    persist();
+    return () => clearTimeout(handle);
   }, [alarms, isLoaded]);
 
 
@@ -111,13 +113,18 @@ export default function App() {
 
       const startLabel = startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const endLabel   = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      Alert.alert(
+      await showAlertAsync(
         'Alarms Scheduled',
-        `${notificationIds.length} alarm(s) set from ${startLabel} to ${endLabel}.\nThey will fire even if the app is closed.`
+        `${notificationIds.length} alarm(s) set from ${startLabel} to ${endLabel}.\nThey will fire even if the app is closed.`,
+        [{ text: 'OK' }]
       );
     } catch (e) {
       console.log('Failed to schedule alarms', e);
-      Alert.alert('Error', 'Could not schedule alarms. Check permissions and try again.');
+      await showAlertAsync(
+        'Error',
+        'Could not schedule alarms. Check permissions and try again.',
+        [{ text: 'OK' }]
+      );
     }
   }, [startTime, endTime, intervalMinutes]);
 
@@ -158,7 +165,7 @@ export default function App() {
 
   // ─── DELETE alarm set ───
   const confirmDeleteAlarmSet = useCallback((id: string) => {
-    Alert.alert(
+    showAlertAsync(
       'Delete alarm set?',
       'This will remove entire batch.',
       [
@@ -174,8 +181,7 @@ export default function App() {
             setAlarms((prev) => prev.filter((a) => a.id !== id));
           },
         },
-      ],
-      { cancelable: true }
+      ]
     );
   }, [alarms]);
 
