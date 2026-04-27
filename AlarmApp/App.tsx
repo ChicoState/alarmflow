@@ -22,6 +22,13 @@ import {
 } from "./Time.tsx"
 
 
+import {
+  createAlarmChannel,
+  requestAlarmPermissions,
+  scheduleAlarmSet,
+  cancelAlarmSet,
+} from './AlarmScheduler';
+
 interface AlarmSet {
   id: string;
   start: string;           
@@ -29,8 +36,8 @@ interface AlarmSet {
   interval: number;        // minutes
   count: number;           // num of alarms
   active: boolean;
+  notificationIds?: string[]; // Added for OS scheduling
 }
-
 
 function check_time(current_time: Date, alarm_time: Date): boolean {
   let CT: Date = current_time;    // current time
@@ -46,7 +53,6 @@ function check_time(current_time: Date, alarm_time: Date): boolean {
   // the alarm should NOT go off when they are different
   return false;
 }
-
 
 export default function App() {
   const [alarms,    setAlarms]    = useState<AlarmSet[]>([]);
@@ -64,50 +70,28 @@ export default function App() {
   //guard against overlapping alarms
   const lastFiredRef = React.useRef<Record<string, string>>({});
 
-  // check every second
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = new Date();
-      const nowStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-      for (const set of alarms) {
-        if (!set.active) continue;
-
-        //fire only once per minute to avoid overlapping alarms
-        if (now.getSeconds() !== 0) continue;
-
-        if (nowStr === set.end) {
-
-          //checks the date so that alarm can fire each day
-          const minuteKey = `${now.toDateString()} ${now.getHours()}:${now.getMinutes()}`;
-
-             //guards against overlapping alarms and re-firing within the same minute
-             if (lastFiredRef.current[set.id] !== minuteKey) {
-                 lastFiredRef.current[set.id] = minuteKey;
-                   Alert.alert("Alarm!!!!", `Alarm set ended at ${set.end}`);
-            }
-        }
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [alarms]);
-
   const [isLoaded, setIsLoaded] = useState(false);
+
+
+  useEffect(() => {
+    const init = async () => {
+      await createAlarmChannel();
+      await requestAlarmPermissions();
+    };
+    init();
+  }, []);
 
   // save alarms
   useEffect(() => {
     if (!isLoaded) return;
 
-    const saveAlarms = async () => {
-      try { // save to alarms set
-        await AsyncStorage.setItem('ALARMS', JSON.stringify(alarms));
-      } catch (e) {
-        console.log('Failed to save alarms', e);
-      }
-    };
+    const handle = setTimeout(() => {
+      AsyncStorage.setItem('ALARMS', JSON.stringify(alarms)).catch((e) =>
+        console.log('Failed to save alarms', e)
+      );
+    }, 250);
 
-    saveAlarms();
+    return () => clearTimeout(handle);
   }, [alarms, isLoaded]);
 
   // load alarms
@@ -128,36 +112,65 @@ export default function App() {
     loadAlarms();
   }, []);
 
-  const CreateIntervalAlarms = () => {
-    let current = new Date(startTime);
-    const end = new Date(endTime);
-    const intervalMs = intervalMinutes * 60 * 1000;
-    let count = 0;
+  const CreateIntervalAlarms = async () => {
+    const allowed = await requestAlarmPermissions();
+    if (!allowed) return;
 
-    while (current <= end) {
-      count++;
-      current = new Date(current.getTime() + intervalMs);
+    try {
+      const { count, notificationIds } = await scheduleAlarmSet(
+        startTime,
+        endTime,
+        intervalMinutes
+      );
+
+      // {/*set alarm*/} //should not be in CreateIntervalAlarms
+      const newAlarmSet: AlarmSet = {
+        id: Date.now().toString(),
+        start: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        end: endTime.toLocaleTimeString([],     { hour: '2-digit', minute: '2-digit' }),
+        interval: intervalMinutes,
+        count,
+        active: true,
+        notificationIds,
+      };
+
+      setAlarms((prev) => [...prev, newAlarmSet]);
+      Alert.alert('Alarms Created!', `${count} alarms would be scheduled!`);
+    } catch (e) {
+      console.log('Failed to schedule alarms', e);
+      Alert.alert('Error', 'Could not schedule alarms. Check permissions and try again.');
     }
-
-    // {/*set alarm*/} //should not be in CreateIntervalAlarms
-    const newAlarmSet: AlarmSet = {
-      id: Date.now().toString(),
-      start: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      end: endTime.toLocaleTimeString([],     { hour: '2-digit', minute: '2-digit' }),
-      interval: intervalMinutes,
-      count,
-      active: true,
-    };
-
-    setAlarms((prev) => [...prev, newAlarmSet]);
-    Alert.alert('Alarms Created!', `${count} alarms would be scheduled!`);
   };
 
-// Issues here -  something with ID string/integers.
-  const toggleAlarmSet = (id: string) => {
-    setAlarms((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, active: !a.active } : a))
-    );
+  const toggleAlarmSet = async (id: string) => {
+    const target = alarms.find((a) => a.id === id);
+    if (!target) return;
+
+    if (target.active) {
+      if (target.notificationIds) {
+        await cancelAlarmSet(target.notificationIds);
+      }
+      setAlarms((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, active: false, notificationIds: [] } : a))
+      );
+    } else {
+      const allowed = await requestAlarmPermissions();
+      if (!allowed) return;
+
+      // Create temporary dates based on the stored local time strings to reschedule
+      const startDate = new Date();
+      const [startHours, startMinutes] = target.start.split(/[: ]/);
+      startDate.setHours(target.start.includes('PM') && startHours !== '12' ? parseInt(startHours) + 12 : parseInt(startHours), parseInt(startMinutes));
+      
+      const endDate = new Date();
+      const [endHours, endMinutes] = target.end.split(/[: ]/);
+      endDate.setHours(target.end.includes('PM') && endHours !== '12' ? parseInt(endHours) + 12 : parseInt(endHours), parseInt(endMinutes));
+
+      const { notificationIds } = await scheduleAlarmSet(startDate, endDate, target.interval);
+      setAlarms((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, active: true, notificationIds } : a))
+      );
+    }
   };
 
 
@@ -171,7 +184,11 @@ const confirmDeleteAlarmSet = (id: string) => {
             {
                 text: "Delete",
                 style: "destructive",
-                onPress: () => {
+                onPress: async () => {
+                  const target = alarms.find((a) => a.id === id);
+                  if (target && target.notificationIds) {
+                    await cancelAlarmSet(target.notificationIds);
+                  }
                   setAlarms(prev => prev.filter(a => a.id !== id));
                 },
             },
