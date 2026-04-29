@@ -152,6 +152,24 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     padding: 20,
   },
+
+  dropdownBox: {
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: 'black',
+    borderRadius: 8,
+    marginTop: 5,
+  },
+
+  dropdownItem: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'white'
+  },
+
+  dropdownButton: {
+    paddingVertical: 10,
+  },
 });
 
 

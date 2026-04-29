@@ -63,6 +63,7 @@ export default function App() {
   const [showIntervalPicker, setShowIntervalPicker] = useState<boolean>(false);
   const [editingAlarmId, setEditingAlarmId] = useState<string | null>(null);
   const [showAlarmModal, setShowAlarmModal] = useState(false);
+  const [intervalDropdownOpen, setIntervalDropdownOpen] = useState(false);
 
   //guard against overlapping alarms
   const lastFiredRef = React.useRef<Record<string, string>>({});
@@ -333,12 +334,31 @@ const confirmDeleteAlarmSet = (id: string) => {
 
             {/* interval picker */}
             <Text style = {styles.summaryLabel}>Interval</Text>
-            <TouchableOpacity onPress={() => setShowIntervalPicker(true)}>
+            <TouchableOpacity
+              onPress = {() => setIntervalDropdownOpen(!intervalDropdownOpen)}
+              style = {styles.dropdownButton}
+            >
               <Text style = {styles.timeText}>
                 Every {intervalMinutes} minutes
               </Text>
             </TouchableOpacity>
 
+            {intervalDropdownOpen && (
+              <View style = {styles.dropdownBox}>
+                {intervalOptions.map((min) => (
+                  <TouchableOpacity
+                    key = {min}
+                    onPress = {() => {
+                      setIntervalMinutes(min);
+                      setIntervalDropdownOpen(false);
+                    }}
+                    style = {styles.dropdownItem}
+                  >
+                    <Text>{min} minutes</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
             <Button
               title = {editingAlarmId ? "Save Edit" : "Create"}
               onPress={() => {
