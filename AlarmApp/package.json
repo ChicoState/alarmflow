@@ -9,6 +9,7 @@
   "main": "index.js",
   "scripts": {
     "android": "react-native run-android",
+    "ios": "react-native run-ios",
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest"
@@ -18,8 +19,10 @@
     "@notifee/react-native": "^9.1.6",
     "@react-native-async-storage/async-storage": "^2.1.0",
     "@react-native-community/datetimepicker": "^8.6.0",
+    "@react-native/new-app-screen": "0.84.0",
     "react": "19.2.3",
     "react-native": "0.84.0",
+    "react-native-safe-area-context": "^5.5.2",
     "react-native-sound": "^0.13.0",
     "react-native-system-setting": "^1.7.6"
   },
@@ -29,6 +32,7 @@
     "@babel/runtime": "^7.25.0",
     "@react-native-community/cli": "^20.1.2",
     "@react-native-community/cli-platform-android": "20.1.0",
+    "@react-native-community/cli-platform-ios": "^20.1.2",
     "@react-native/babel-preset": "0.84.0",
     "@react-native/eslint-config": "0.84.0",
     "@react-native/metro-config": "0.84.0",
