@@ -92,6 +92,28 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
 
+  timeTitle: { 
+    fontSize: 20,
+    fontWeight: '600',
+    textAlign: 'center',
+    alignSelf: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 25,
+    marginVertical: 4,
+    marginBottom: 35,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+
+    // slight shadow to make touchable noticable
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+
   clickable: { 
     color: '#2196F3', 
     marginVertical: 4, 
@@ -120,10 +142,23 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 
-  fab: {
+  fabRight: {
     position: 'absolute',
     bottom: 30,
     right: 30,
+    backgroundColor: 'green',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+  },
+
+  fabLeft: {
+    position: 'absolute',
+    bottom: 30,
+    left: 30,
     backgroundColor: 'green',
     width: 60,
     height: 60,
@@ -170,6 +205,11 @@ const styles = StyleSheet.create({
   dropdownButton: {
     paddingVertical: 10,
   },
+
+  buttonImageIcon: {
+    width: 47, 
+    height: 47
+  }
 });
 
 
