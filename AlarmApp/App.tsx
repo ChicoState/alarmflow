@@ -19,8 +19,7 @@ import styles from "./styles.js"
 import SOUND from "./Sound.tsx"
 
 
-//TODO: convert repeats to singles
-interface RepeatAlarm {
+interface Alarm {
   id: string;
   start: string;           
   end: string;
@@ -28,16 +27,10 @@ interface RepeatAlarm {
   count: number;           // num of alarms
   active: boolean;
 }
-interface SingleAlarm {
-  id: string;
-  start: string;
-  active: boolean;
-}
 
 
 export default function App() {
-  const [rAlarms, setRepeatAlarms] = useState<RepeatAlarm[]>([]);
-  const [sAlarms, setSingleAlarms] = useState<SingleAlarm[]>([]);
+  const [rAlarms, setAlarms] = useState<Alarm[]>([]);
 
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
 
@@ -53,8 +46,10 @@ export default function App() {
   const [showEndPicker, setShowEndPicker]               = useState<boolean>(false);
   const [showIntervalPicker, setShowIntervalPicker]     = useState<boolean>(false);
   const [editingAlarmId, setEditingAlarmId]             = useState<string | null>(null);
-  const [showAlarmModal, setShowAlarmModal]             = useState(false);
   const [intervalDropdownOpen, setIntervalDropdownOpen] = useState(false);
+
+  const [showAlarmModal, setShowRepeatAlarmModal] = useState(false);
+  const [showSingleAlarmModal, setShowSingleAlarmModal] = useState(false);
 
   //guard against overlapping alarms
   const lastFiredRef = React.useRef<Record<string, string>>({});
@@ -117,7 +112,7 @@ export default function App() {
       try { // load stored alarms set
         const stored = await AsyncStorage.getItem('ALARMS');
         if (stored !== null) {
-          setRepeatAlarms(JSON.parse(stored));
+          setAlarms(JSON.parse(stored));
         }
       } catch (e) {
         console.log('Failed to load alarms', e);
@@ -141,7 +136,7 @@ export default function App() {
     }
 
     // {/*set alarm*/} //should not be in CreateIntervalAlarms
-    const newRepeatAlarm: RepeatAlarm = {
+    const newAlarm: Alarm = {
       id: Date.now().toString(),
       start: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       end: endTime.toLocaleTimeString([],     { hour: '2-digit', minute: '2-digit' }),
@@ -150,11 +145,25 @@ export default function App() {
       active: true,
     };
 
-    setRepeatAlarms((prev) => [...prev, newRepeatAlarm]);
+    setAlarms((prev) => [...prev, newAlarm]);
     //Alert.alert('Alarms Created!', `${count} alarms would be scheduled!`);
   };
 
-  const openEditRepeatAlarm = (alarm: RepeatAlarm) => {
+  const CreateSingleAlarms = () => {
+    const newAlarm: Alarm = {
+      id: Date.now().toString(),
+      start: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      end: startTime.toLocaleTimeString([],     { hour: '2-digit', minute: '2-digit' }),
+      interval: 0,
+      count: 0,
+      active: true,
+    };
+
+    setAlarms((prev) => [...prev, newAlarm]);
+    //Alert.alert('Alarms Created!', `${count} alarms would be scheduled!`);
+  };
+
+  const openEditAlarm = (alarm: Alarm) => {
     const today = new Date();
     // parse stored time
     const startParts = alarm.start.match(/(\d+):(\d+)\s?(AM|PM)?/i);
@@ -187,13 +196,24 @@ export default function App() {
     const end = new Date(today);
     end.setHours(endHour, endMinute, 0, 0);
     
-    // set editing state
+    // set single/repeat alarm editing state
     setEditingAlarmId(alarm.id);
     setStartTime(start);
     setEndTime(end);
     setIntervalMinutes(alarm.interval);
 
-    setShowAlarmModal(true);
+    console.log(
+      start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), 
+      end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), 
+      alarm.interval);
+
+    // model choice
+    if (startHour == endHour && startMinute == endMinute && alarm.interval == 0){
+      setShowSingleAlarmModal(true);
+    }
+    else {
+      setShowRepeatAlarmModal(true);
+    }
   };
 
   const saveEditRepeatAlarm = () => {
@@ -209,15 +229,15 @@ export default function App() {
       current = new Date(current.getTime() + intervalMs);
     }
 
-    setRepeatAlarms((prev) =>
+    setAlarms((prev) =>
       prev.map((a) =>
         a.id === editingAlarmId
           ? {
               ...a,
               start: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
               end: endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              interval: intervalMinutes,
-              count,
+              interval: 0,
+              count: 0,
             }
           : a
       )
@@ -227,15 +247,36 @@ export default function App() {
     Alert.alert("Updated", "Alarm set updated.");
   };
 
+  const saveEditSingleAlarm = () => {
+    if (!editingAlarmId) return;
+
+    setAlarms((prev) =>
+      prev.map((a) =>
+        a.id === editingAlarmId
+          ? {
+              ...a,
+              start: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              end: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              interval: 0,
+              count: 0,
+            }
+          : a
+      )
+    );
+
+    setEditingAlarmId(null);
+    Alert.alert("Updated", "Alarm set updated.");
+  }
+
   // Issues here -  something with ID string/integers.
-  const toggleRepeatAlarm = (id: string) => {
-    setRepeatAlarms((prev) =>
+  const toggleAlarm = (id: string) => {
+    setAlarms((prev) =>
       prev.map((a) => (a.id === id ? { ...a, active: !a.active } : a))
     );
   };
 
 
-  const confirmDeleteRepeatAlarm = (id: string) => {
+  const confirmDeleteAlarm = (id: string) => {
     Alert.alert(
         "Delete alarm set?",
         "This will remove entire batch.",
@@ -246,7 +287,7 @@ export default function App() {
                 text: "Delete",
                 style: "destructive",
                 onPress: () => {
-                  setRepeatAlarms(prev => prev.filter(a => a.id !== id));
+                  setAlarms(prev => prev.filter(a => a.id !== id));
                   if (editingAlarmId === id) {
                     setEditingAlarmId(null);
                   }
@@ -271,21 +312,26 @@ export default function App() {
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.alarmItem}
-            onPress={() => openEditRepeatAlarm(item)}
+            onPress={() => openEditAlarm(item)}
           >
             <Switch
               value={item.active}
-              onValueChange={() => toggleRepeatAlarm(item.id)}
+              onValueChange={() => toggleAlarm(item.id)}
             />
             {/* summarized alarm text */}
             <Text style={styles.alarmText}>
               Start Time: {item.start} {'\n'}
-              End Time: {item.end} {'\n'}
-              Interval: {item.interval} min
+
+              {item.end !== item.start && (
+                <>End Time: {item.end} {'\n'}</>
+              )}
+              {item.interval !== 0 && (
+                <>Interval: {item.interval} min</>
+              )}
             </Text>
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <TouchableOpacity
-                onPress={() => confirmDeleteRepeatAlarm(item.id)}
+                onPress={() => confirmDeleteAlarm(item.id)}
                 style={styles.deleteButton}
               >
                 <Text style={styles.deleteButtonText}>Delete</Text>
@@ -296,6 +342,7 @@ export default function App() {
         ListEmptyComponent={<Text style={styles.emptyText}>No alarms yet</Text>}
       />
 
+      {/* REPEAT ALARM MODEL */}
       <Modal
         visible = {showAlarmModal}
         animationType = "slide"
@@ -360,14 +407,54 @@ export default function App() {
               title = {editingAlarmId ? "Save Edit" : "Create"}
               onPress={() => {
                 editingAlarmId ? saveEditRepeatAlarm() : CreateIntervalAlarms();
-                setShowAlarmModal(false);
+                setShowRepeatAlarmModal(false);
               }}
             />
 
             <Button
               title = "Cancel"
               color = "red"
-              onPress={() => setShowAlarmModal(false)}
+              onPress={() => setShowRepeatAlarmModal(false)}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* SINGLE ALARM MODEL */}
+      <Modal
+        visible = {showSingleAlarmModal}
+        animationType = "slide"
+        transparent = {true}
+      >
+        <View style = {styles.modalOverlay}>
+          <View style = {styles.modalBox}>
+            <Text style={styles.title}>
+              {editingAlarmId ? "Edit Alarm" : "Create Alarm"}
+            </Text>
+
+            {/* alarm time */}
+            <Text style = {styles.summaryLabel}>Alarm Time</Text>
+            <TouchableOpacity onPress = {() => setShowStartPicker(true)}>
+              <Text style = {styles.timeText}>
+                {startTime.toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </Text>
+            </TouchableOpacity>
+
+            <Button
+              title = {editingAlarmId ? "Save Edit" : "Create"}
+              onPress={() => {
+                editingAlarmId ? saveEditSingleAlarm() : CreateSingleAlarms();
+                setShowSingleAlarmModal(false);
+              }}
+            />
+
+            <Button
+              title = "Cancel"
+              color = "red"
+              onPress={() => setShowSingleAlarmModal(false)}
             />
           </View>
         </View>
@@ -433,7 +520,7 @@ export default function App() {
           style={styles.fabLeft}
           onPress={() => {
             setEditingAlarmId(null);
-            setShowAlarmModal(true);
+            setShowSingleAlarmModal(true);
           }}
         > 
           <Image
@@ -447,7 +534,7 @@ export default function App() {
           style={styles.fabRight}
           onPress={() => {
             setEditingAlarmId(null);
-            setShowAlarmModal(true);
+            setShowRepeatAlarmModal(true);
           }}
         > 
           <Image
