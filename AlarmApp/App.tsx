@@ -279,6 +279,8 @@ const confirmDeleteAlarmSet = (id: string) => {
             <Switch
               value={item.active}
               onValueChange={() => toggleAlarmSet(item.id)}
+              trackColor={{ false: 'grey', true: '#d6ecff' }}
+              thumbColor={item.active ? '#2196f3' : '#d6ecff'}
             />
             {/* summarized alarm text */}
             <Text style={styles.alarmText}>

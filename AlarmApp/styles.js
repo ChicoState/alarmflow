@@ -7,7 +7,7 @@ const styles = StyleSheet.create({
   container: { 
     flex: 1, 
     padding: 20, 
-    backgroundColor: '#fff' 
+    backgroundColor: '#FAF8F2' //soft paper white
   },
 
   title: { 
@@ -17,16 +17,17 @@ const styles = StyleSheet.create({
     textAlign: 'center' 
   },
 
+  //alarm batch/set
   alarmItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 14,
     borderBottomWidth: 1,
     borderColor: '#ddd',
-    backgroundColor: '#fff',
+    backgroundColor: 'white',
   },
 
-  alarmText: { 
+  alarmText: {
     marginLeft: 12, 
     fontSize: 16, 
     flex: 1,
@@ -52,17 +53,17 @@ const styles = StyleSheet.create({
   emptyText: { 
     textAlign: 'center', 
     marginTop: 40, 
-    color: '#888', 
+    color: '#888',
     fontSize: 16 
   },
 
   summary: {
     marginVertical: 24,
     padding: 16,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#faf8f2', //soft paper white
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: '#2196f3',
   },
 
   summaryLabel: { 
@@ -79,13 +80,13 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 14,
     marginVertical: 4,
-    backgroundColor: '#fff',
+    backgroundColor: 'white', //pale blue
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#e0e0e0',
 
     // slight shadow to make touchable noticable
-    shadowColor: '#000',
+    shadowColor: 'black',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.12,
     shadowRadius: 3,
@@ -93,17 +94,19 @@ const styles = StyleSheet.create({
   },
 
   clickable: { 
-    color: '#2196F3', 
-    marginVertical: 4, 
+    color: '#2196f3',  //Recycling-bin blue
+    marginVertical: 4,
     fontWeight: '500' 
   },
 
+/* old interval picker, not used
   intervalPicker: {
     marginTop: 20,
     padding: 20,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: 'red',
     borderRadius: 12,
   },
+*/
 
   intervalOption: {
     paddingVertical: 14,
@@ -122,9 +125,9 @@ const styles = StyleSheet.create({
 
   fab: {
     position: 'absolute',
-    bottom: 30,
-    right: 30,
-    backgroundColor: 'green',
+    bottom: 80,
+    right: -2,
+    backgroundColor: '#2196f3', //Recycling bin blue
     width: 60,
     height: 60,
     borderRadius: 30,
@@ -141,14 +144,14 @@ const styles = StyleSheet.create({
 
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'black',
+    backgroundColor: '#d6ecff', //pale blue
     justifyContent: 'center',
     alignItems: 'center',
   },
 
   modalBox: {
     width: '85%',
-    backgroundColor: 'white',
+    backgroundColor: '#faf8f2', //soft paper white
     borderRadius: 15,
     padding: 20,
   },
