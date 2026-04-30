@@ -19,6 +19,7 @@ import styles from "./styles.js"
 import SOUND from "./Sound.tsx"
 
 
+//TODO: convert repeats to singles
 interface RepeatAlarm {
   id: string;
   start: string;           
@@ -427,7 +428,7 @@ export default function App() {
           {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </Text>          
 
-        {/* + button */}
+        {/* single alarm button */}
         <TouchableOpacity 
           style={styles.fabLeft}
           onPress={() => {
@@ -441,7 +442,7 @@ export default function App() {
           />
         </TouchableOpacity>
       
-        {/* + button */}
+        {/* repeat alarm button */}
         <TouchableOpacity 
           style={styles.fabRight}
           onPress={() => {
