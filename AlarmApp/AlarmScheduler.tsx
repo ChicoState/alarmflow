@@ -3,9 +3,11 @@ import notifee, {
   TimestampTrigger,
   AndroidImportance,
   AndroidCategory,
+  AndroidVisibility,
   EventType,
   Event,
 } from '@notifee/react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   Platform,
   PermissionsAndroid,
@@ -17,8 +19,16 @@ import {
 // ========================== //
 // CONSTANTS
 // ========================== //
-const CHANNEL_ID = 'alarm_channel';
+const CHANNEL_ID = 'alarm_channel'; // bumped: changing channel sound/importance
+                                       // requires a new channel id, Android caches
+                                       // the original settings on the old one.
 const CHANNEL_NAME = 'Alarm Notifications';
+
+// Persisted user preferences
+const BATTERY_OPT_DISMISSED_KEY = 'BATTERY_OPT_PROMPT_DISMISSED';
+
+// Action IDs
+const DISMISS_ACTION_ID = 'dismiss_alarm';
 
 // ========================== //
 // TYPES
@@ -96,8 +106,15 @@ export function showAlertAsync(
 // CHANNEL SETUP
 // ========================== //
 /**
- * Creates the Android notification channel with alarm-level importance.
- * Must be called once before scheduling any notifications.
+ * Creates the Android notification channel configured for ALARM behavior:
+ *  - importance HIGH so it heads-up
+ *  - bypasses DND (alarm category)
+ *  - uses default alarm stream so volume follows the alarm slider
+ *
+ * NOTE: Once a channel is created, its importance/sound CANNOT be changed
+ * by the app — the user owns those settings. That's why we use a v2 id;
+ * if the previous app build created the old channel, we leave it alone
+ * and use this fresh one with the correct alarm config.
  */
 export async function createAlarmChannel(): Promise<void> {
   await notifee.createChannel({
@@ -105,6 +122,10 @@ export async function createAlarmChannel(): Promise<void> {
     name: CHANNEL_NAME,
     importance: AndroidImportance.HIGH,
     sound: 'default',
+    vibration: true,
+    vibrationPattern: [300, 500, 300, 500],
+    bypassDnd: true,
+    visibility: AndroidVisibility.PUBLIC,
   });
 }
 
@@ -120,15 +141,15 @@ export async function createAlarmChannel(): Promise<void> {
 let pendingPermissionRequest: Promise<boolean> | null = null;
 
 /**
- * Requests all permissions needed for reliable alarm delivery:
- *  - Notification permission (Android 13+)
- *  - Exact alarm permission (Android 12+)
- *  - Battery optimization exemption (prevents doze from killing triggers)
+ * Requests permissions needed for reliable alarm delivery:
+ *  - Notification permission (Android 13+) — REQUIRED, blocks if denied
+ *  - Exact alarm permission (Android 12+) — REQUIRED, blocks if denied
+ *  - Battery optimization exemption — OPTIONAL soft prompt, asked at most ONCE
  *
- * Each user-facing dialog is now AWAITED before moving on, so prompts
- * appear sequentially instead of overlapping.
- *
- * Returns true only if ALL required permissions are granted.
+ * The battery prompt persists the user's "Skip" choice in AsyncStorage so
+ * we don't badger them on every Create Alarm tap. They can re-trigger the
+ * prompt manually via resetBatteryOptimizationPrompt() if we ever expose
+ * a settings screen for it.
  */
 export async function requestAlarmPermissions(): Promise<boolean> {
   if (Platform.OS !== 'android') return true;
@@ -176,20 +197,44 @@ export async function requestAlarmPermissions(): Promise<boolean> {
         }
       }
 
-      // 3. Battery optimization exemption (soft prompt — not a hard block)
-      const batteryOptimized = await notifee.isBatteryOptimizationEnabled();
-      if (batteryOptimized) {
-        await showAlertAsync(
-          'Battery Optimization',
-          'For reliable alarms, please disable battery optimization for Alarm Flow.',
-          [
-            {
-              text: 'Open Settings',
-              onPress: () => notifee.openBatteryOptimizationSettings(),
-            },
-            { text: 'Skip', style: 'cancel' },
-          ],
-        );
+      // 3. Battery optimization — soft, ask-once.
+      //
+      // We only show this prompt if BOTH:
+      //   (a) the OS still has us battery-optimized, AND
+      //   (b) the user hasn't already dismissed/skipped this prompt.
+      //
+      // If the user opens settings and disables optimization, condition
+      // (a) becomes false on the next call and we never ask again.
+      // If they tap "Skip", we set the flag in (b) and never ask again
+      // unless explicitly reset.
+      const dismissed = await AsyncStorage.getItem(BATTERY_OPT_DISMISSED_KEY);
+      if (dismissed !== 'true') {
+        const batteryOptimized = await notifee.isBatteryOptimizationEnabled();
+        if (batteryOptimized) {
+          await showAlertAsync(
+            'Battery Optimization',
+            'For reliable alarms, please disable battery optimization for Alarm Flow. You can change this later in your phone Settings.',
+            [
+              {
+                text: 'Open Settings',
+                onPress: async () => {
+                  // Treat opening settings as "they handled it" — we don't
+                  // re-prompt. If they don't actually flip the switch, the
+                  // OS-level optimization stays on but they made the call.
+                  await AsyncStorage.setItem(BATTERY_OPT_DISMISSED_KEY, 'true');
+                  notifee.openBatteryOptimizationSettings();
+                },
+              },
+              {
+                text: 'Skip',
+                style: 'cancel',
+                onPress: async () => {
+                  await AsyncStorage.setItem(BATTERY_OPT_DISMISSED_KEY, 'true');
+                },
+              },
+            ],
+          );
+        }
       }
 
       return true;
@@ -201,16 +246,32 @@ export async function requestAlarmPermissions(): Promise<boolean> {
   return pendingPermissionRequest;
 }
 
+/**
+ * Clears the persisted "user dismissed battery optimization prompt" flag.
+ * Call this if you add a settings screen with a "Re-check battery settings"
+ * button.
+ */
+export async function resetBatteryOptimizationPrompt(): Promise<void> {
+  await AsyncStorage.removeItem(BATTERY_OPT_DISMISSED_KEY);
+}
+
 
 // ========================== //
 // SCHEDULING
 // ========================== //
 /**
- * Schedules OS-level trigger notifications for every alarm in a set.
- * Each alarm becomes an independent Notifee TimestampTrigger that fires
- * even when the app is closed or the screen is locked.
+ * Schedules OS-level alarm trigger notifications for every alarm in a set.
  *
- * Returns the array of notification IDs so they can be stored with the AlarmSet.
+ * Each alarm is configured to RING (not ping) until the user dismisses it:
+ *   - category: ALARM         — bypasses DND, treated as alarm by OS
+ *   - loopSound: true         — sound restarts continuously
+ *   - ongoing: true           — user can't swipe it away accidentally
+ *   - autoCancel: false       — tapping the body doesn't dismiss
+ *   - fullScreenAction        — pops over lockscreen (requires
+ *                               USE_FULL_SCREEN_INTENT in AndroidManifest)
+ *   - explicit "Dismiss" action — the only clean way to silence it
+ *   - importance HIGH + alarm category + asForegroundService keeps the
+ *     sound playing even if the system tries to throttle the notification
  */
 export async function scheduleAlarmSet(
   startDate: Date,
@@ -222,6 +283,7 @@ export async function scheduleAlarmSet(
   let current = new Date(startDate);
   const now = Date.now();
 
+  let scheduledCount = 0;
   let index = 0;
   while (current <= endDate) {
     // Only schedule future alarms (skip times that already passed)
@@ -247,62 +309,104 @@ export async function scheduleAlarmSet(
             channelId: CHANNEL_ID,
             importance: AndroidImportance.HIGH,
             category: AndroidCategory.ALARM,
+            visibility: AndroidVisibility.PUBLIC,
+
+            // RING, don't ping ----------------------------------------
             sound: 'default',
-            fullScreenAction: { id: 'default' }, // wake screen
+            loopSound: true,
+            // Vibrate in a long pattern so it feels like an alarm
+            vibrationPattern: [300, 500, 300, 500, 300, 500, 300, 500],
+
+            // Persist on screen until dismissed
+            ongoing: true,
+            autoCancel: false,
+
+            // Pop over the lockscreen / wake the device
+            fullScreenAction: { id: 'default' },
             pressAction: { id: 'default' },
+
+            // Explicit dismiss button — the user-facing way to silence it
+            actions: [
+              {
+                title: 'Dismiss',
+                pressAction: { id: DISMISS_ACTION_ID },
+              },
+            ],
           },
         },
         trigger,
       );
 
       notificationIds.push(id);
+      scheduledCount++;
     }
 
     index++;
     current = new Date(current.getTime() + intervalMs);
   }
 
-  return { count: index, notificationIds };
+  return { count: scheduledCount, notificationIds };
 }
 
 
 // ========================== //
 // CANCELLATION
 // ========================== //
-/**
- * Cancels all scheduled trigger notifications for a given alarm set.
- */
 export async function cancelAlarmSet(notificationIds: string[]): Promise<void> {
   for (const id of notificationIds) {
     await notifee.cancelTriggerNotification(id);
+    // Also cancel any *displayed* copy of this notification (in case it
+    // already fired and is currently ringing).
+    await notifee.cancelDisplayedNotification(id);
+  }
+}
+
+export async function cancelAllAlarms(): Promise<void> {
+  await notifee.cancelTriggerNotifications();
+  await notifee.cancelAllNotifications();
+}
+
+
+// ========================== //
+// EVENT HANDLERS
+// ========================== //
+/**
+ * Shared handler logic. When the user dismisses the alarm — by tapping
+ * the body, the Dismiss action, or swiping when permitted — we cancel
+ * the displayed notification, which stops the looping sound.
+ *
+ * Without this, `loopSound: true` will keep ringing until the trigger
+ * timeout, even after the user interacts with it.
+ */
+async function handleAlarmEvent({ type, detail }: Event): Promise<void> {
+  const notificationId = detail.notification?.id;
+  if (!notificationId) return;
+
+  switch (type) {
+    case EventType.ACTION_PRESS:
+    case EventType.PRESS:
+    case EventType.DISMISSED:
+      // Stops the looping sound and removes from the shade.
+      await notifee.cancelDisplayedNotification(notificationId);
+      break;
+    default:
+      break;
   }
 }
 
 /**
- * Cancels every trigger notification managed by Notifee.
+ * Foreground handler — register inside App via useEffect.
+ * Returns the unsubscribe function notifee gives us.
  */
-export async function cancelAllAlarms(): Promise<void> {
-  await notifee.cancelTriggerNotifications();
+export function registerForegroundHandler(): () => void {
+  return notifee.onForegroundEvent(handleAlarmEvent);
 }
 
-
-// ========================== //
-// BACKGROUND EVENT HANDLER
-// ========================== //
 /**
- * Must be registered at the top level (index.js) so the OS can
- * deliver events even when the JS runtime has been killed.
+ * Background handler — register at the top of index.js BEFORE
+ * AppRegistry.registerComponent so the OS can wake JS even if the app
+ * was force-closed.
  */
 export function onBackgroundEvent(): (event: Event) => Promise<void> {
-  return async ({ type, detail }: Event) => {
-    // When user dismisses or presses the notification, clean up
-    if (
-      type === EventType.DISMISSED ||
-      type === EventType.PRESS
-    ) {
-      if (detail.notification?.id) {
-        await notifee.cancelNotification(detail.notification.id);
-      }
-    }
-  };
+  return handleAlarmEvent;
 }

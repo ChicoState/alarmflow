@@ -27,6 +27,7 @@ import {
   requestAlarmPermissions,
   scheduleAlarmSet,
   cancelAlarmSet,
+  registerForegroundHandler,
 } from './AlarmScheduler';
 
 interface AlarmSet {
@@ -79,6 +80,12 @@ export default function App() {
       await requestAlarmPermissions();
     };
     init();
+
+    // Register the foreground event handler so taps/dismissals stop the
+    // looping alarm sound while the app is open. (Background events are
+    // registered in index.js.)
+    const unsubscribe = registerForegroundHandler();
+    return unsubscribe;
   }, []);
 
   // save alarms
