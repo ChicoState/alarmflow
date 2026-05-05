@@ -6,6 +6,7 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven { url("$rootDir/../node_modules/@notifee/react-native/android/libs") }
     }
 }
 
