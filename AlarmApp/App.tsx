@@ -9,9 +9,6 @@ import {
   Switch,
   Alert,
   Platform,
-  Modal,                // overlay for edit form
-  KeyboardAvoidingView, // keeps pickers visible
-  Pressable,            // tap-to-dismiss
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -35,218 +32,44 @@ import {
 
 interface AlarmSet {
   id: string;
-  start: string;
+  start: string;           
   end: string;
   interval: number;        // minutes
   count: number;           // num of alarms
   active: boolean;
-  notificationIds?: string[];
+  notificationIds?: string[]; // Added for OS scheduling
 }
 
 function check_time(current_time: Date, alarm_time: Date): boolean {
-  let CT: Date = current_time;
-  let AT: Date = alarm_time;
+  let CT: Date = current_time;    // current time
+  let AT: Date = alarm_time;      // alarm time
 
-  if (CT.getHours() === AT.getHours()) {
-    if (CT.getMinutes() === AT.getMinutes()) {
+  // alarm should go off when both times match
+  if(CT.getHours() === AT.getHours()){
+    if(CT.getMinutes() === AT.getMinutes()){
       return true;
     }
   }
 
+  // the alarm should NOT go off when they are different
   return false;
 }
 
-interface EditModalProps {
-  visible: boolean;
-  initialStart: Date;
-  initialEnd: Date;
-  initialInterval: number;
-  onSave: (start: Date, end: Date, interval: number) => void;
-  onCancel: () => void;
-}
-
-function EditModal({
-  visible,
-  initialStart,
-  initialEnd,
-  initialInterval,
-  onSave,
-  onCancel,
-}: EditModalProps) {
-  const [modalStart, setModalStart]       = useState<Date>(initialStart);
-  const [modalEnd, setModalEnd]           = useState<Date>(initialEnd);
-  const [modalInterval, setModalInterval] = useState<number>(initialInterval);
-
-  const [showStartPicker, setShowStartPicker]       = useState(false);
-  const [showEndPicker, setShowEndPicker]           = useState(false);
-  const [showIntervalPicker, setShowIntervalPicker] = useState(false);
-
-  useEffect(() => {
-    if (visible) {
-      setModalStart(initialStart);
-      setModalEnd(initialEnd);
-      setModalInterval(initialInterval);
-      setShowStartPicker(false);
-      setShowEndPicker(false);
-      setShowIntervalPicker(false);
-    }
-  }, [visible, initialStart, initialEnd, initialInterval]);
-
-  const intervalOptions = [1, 2, 3, 5, 10, 15, 20, 30];
-
-  return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={onCancel}
-    >
-      <Pressable style={styles.editBackdrop} onPress={onCancel}>
-        <Pressable onPress={() => {}}>
-          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-            <View style={styles.editCard}>
-
-              <View style={styles.editHandle} />
-
-              <Text style={styles.editTitle}>Edit Alarm Set</Text>
-
-              {/* Start */}
-              <Text style={styles.editLabel}>Start Time</Text>
-              <TouchableOpacity
-                style={styles.editInputBox}
-                onPress={() => {
-                  setShowEndPicker(false);
-                  setShowIntervalPicker(false);
-                  setShowStartPicker(true);
-                }}
-              >
-                <Text style={styles.editInputText}>
-                  {modalStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </Text>
-              </TouchableOpacity>
-
-              {showStartPicker && (
-                <DateTimePicker
-                  value={modalStart}
-                  mode="time"
-                  is24Hour={false}
-                  onChange={(event, selectedDate) => {
-                    setShowStartPicker(Platform.OS === 'ios');
-                    if (selectedDate) setModalStart(selectedDate);
-                  }}
-                />
-              )}
-
-              {/* End */}
-              <Text style={styles.editLabelSpacing}>End Time</Text>
-              <TouchableOpacity
-                style={styles.editInputBox}
-                onPress={() => {
-                  setShowStartPicker(false);
-                  setShowIntervalPicker(false);
-                  setShowEndPicker(true);
-                }}
-              >
-                <Text style={styles.editInputText}>
-                  {modalEnd.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </Text>
-              </TouchableOpacity>
-
-              {showEndPicker && (
-                <DateTimePicker
-                  value={modalEnd}
-                  mode="time"
-                  is24Hour={false}
-                  onChange={(event, selectedDate) => {
-                    setShowEndPicker(Platform.OS === 'ios');
-                    if (selectedDate) setModalEnd(selectedDate);
-                  }}
-                />
-              )}
-
-              {/* Interval */}
-              <Text style={styles.editLabelSpacing}>Interval</Text>
-              <TouchableOpacity
-                style={styles.editInputBox}
-                onPress={() => {
-                  setShowStartPicker(false);
-                  setShowEndPicker(false);
-                  setShowIntervalPicker((prev) => !prev);
-                }}
-              >
-                <Text style={styles.editInputText}>
-                  Every {modalInterval} minutes
-                </Text>
-              </TouchableOpacity>
-
-              {showIntervalPicker && (
-                <View style={styles.editIntervalContainer}>
-                  {intervalOptions.map((min) => (
-                    <TouchableOpacity
-                      key={min}
-                      onPress={() => {
-                        setModalInterval(min);
-                        setShowIntervalPicker(false);
-                      }}
-                      style={[
-                        styles.editIntervalButton,
-                        modalInterval === min && styles.editIntervalButtonActive,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.editIntervalText,
-                          modalInterval === min && styles.editIntervalTextActive,
-                        ]}
-                      >
-                        {min} min
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-
-              {/* Buttons */}
-              <View style={styles.editButtonRow}>
-                <TouchableOpacity
-                  onPress={onCancel}
-                  style={[styles.editButton, styles.editCancelButton]}
-                >
-                  <Text style={styles.editCancelText}>Cancel</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => onSave(modalStart, modalEnd, modalInterval)}
-                  style={[styles.editButton, styles.editSaveButton]}
-                >
-                  <Text style={styles.editSaveText}>Save Edit</Text>
-                </TouchableOpacity>
-              </View>
-
-            </View>
-          </KeyboardAvoidingView>
-        </Pressable>
-      </Pressable>
-    </Modal>
-  );
-}
-
-
 export default function App() {
-  const [alarms, setAlarms]       = useState<AlarmSet[]>([]);
+  const [alarms,    setAlarms]    = useState<AlarmSet[]>([]);
   const [startTime, setStartTime] = useState<Date>(new Date());
-  const [endTime, setEndTime]     = useState<Date>(() => {
+  const [endTime, setEndTime] = useState<Date>(() => {
     const d = new Date();
     d.setHours(d.getHours() + 1);
     return d;
   });
-  const [intervalMinutes, setIntervalMinutes]       = useState<number>(10);
-  const [showStartPicker, setShowStartPicker]       = useState<boolean>(false);
-  const [showEndPicker, setShowEndPicker]           = useState<boolean>(false);
+  const [intervalMinutes, setIntervalMinutes] = useState<number>(10);
+  const [showStartPicker, setShowStartPicker] = useState<boolean>(false);
+  const [showEndPicker, setShowEndPicker] = useState<boolean>(false);
   const [showIntervalPicker, setShowIntervalPicker] = useState<boolean>(false);
 
-  // The full alarm object being edited. null = modal closed.
-  const [editingAlarm, setEditingAlarm] = useState<AlarmSet | null>(null);
+  //guard against overlapping alarms
+  const lastFiredRef = React.useRef<Record<string, string>>({});
 
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -258,6 +81,9 @@ export default function App() {
     };
     init();
 
+    // Register the foreground event handler so taps/dismissals stop the
+    // looping alarm sound while the app is open. (Background events are
+    // registered in index.js.)
     const unsubscribe = registerForegroundHandler();
     return unsubscribe;
   }, []);
@@ -278,7 +104,7 @@ export default function App() {
   // load alarms
   useEffect(() => {
     const loadAlarms = async () => {
-      try {
+      try { // load stored alarms set
         const stored = await AsyncStorage.getItem('ALARMS');
         if (stored !== null) {
           setAlarms(JSON.parse(stored));
@@ -304,10 +130,11 @@ export default function App() {
         intervalMinutes
       );
 
+      // {/*set alarm*/} //should not be in CreateIntervalAlarms
       const newAlarmSet: AlarmSet = {
         id: Date.now().toString(),
         start: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        end:   endTime.toLocaleTimeString([],   { hour: '2-digit', minute: '2-digit' }),
+        end: endTime.toLocaleTimeString([],     { hour: '2-digit', minute: '2-digit' }),
         interval: intervalMinutes,
         count,
         active: true,
@@ -315,55 +142,10 @@ export default function App() {
       };
 
       setAlarms((prev) => [...prev, newAlarmSet]);
-      Alert.alert('Alarms Created!', `${count} alarms scheduled!`);
+      Alert.alert('Alarms Created!', `${count} alarms would be scheduled!`);
     } catch (e) {
       console.log('Failed to schedule alarms', e);
-      Alert.alert('Error', 'Could not schedule alarms.');
-    }
-  };
-
-  const openEditAlarmSet = (alarm: AlarmSet) => {
-    setEditingAlarm(alarm);
-  };
-
-  const saveEditAlarmSetFromModal = async (
-    newStart: Date,
-    newEnd: Date,
-    newInterval: number
-  ) => {
-    if (!editingAlarm) return;
-
-    if (editingAlarm.notificationIds) {
-      await cancelAlarmSet(editingAlarm.notificationIds);
-    }
-
-    try {
-      const { count, notificationIds } = await scheduleAlarmSet(
-        newStart,
-        newEnd,
-        newInterval
-      );
-
-      setAlarms((prev) =>
-        prev.map((a) =>
-          a.id === editingAlarm.id
-            ? {
-                ...a,
-                start: newStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                end:   newEnd.toLocaleTimeString([],   { hour: '2-digit', minute: '2-digit' }),
-                interval: newInterval,
-                count,
-                notificationIds,
-                active: true,
-              }
-            : a
-        )
-      );
-
-      setEditingAlarm(null);
-      Alert.alert('Updated', 'Alarm set updated and rescheduled.');
-    } catch (e) {
-      Alert.alert('Error', 'Failed to reschedule alarms.');
+      Alert.alert('Error', 'Could not schedule alarms. Check permissions and try again.');
     }
   };
 
@@ -376,95 +158,52 @@ export default function App() {
         await cancelAlarmSet(target.notificationIds);
       }
       setAlarms((prev) =>
-        prev.map((a) =>
-          a.id === id ? { ...a, active: false, notificationIds: [] } : a
-        )
+        prev.map((a) => (a.id === id ? { ...a, active: false, notificationIds: [] } : a))
       );
     } else {
       const allowed = await requestAlarmPermissions();
       if (!allowed) return;
 
-      const startParts = target.start.match(/(\d+):(\d+)\s?(AM|PM)?/i);
-      const endParts   = target.end.match(/(\d+):(\d+)\s?(AM|PM)?/i);
-      if (!startParts || !endParts) return;
+      // Create temporary dates based on the stored local time strings to reschedule
+      const startDate = new Date();
+      const [startHours, startMinutes] = target.start.split(/[: ]/);
+      startDate.setHours(target.start.includes('PM') && startHours !== '12' ? parseInt(startHours) + 12 : parseInt(startHours), parseInt(startMinutes));
+      
+      const endDate = new Date();
+      const [endHours, endMinutes] = target.end.split(/[: ]/);
+      endDate.setHours(target.end.includes('PM') && endHours !== '12' ? parseInt(endHours) + 12 : parseInt(endHours), parseInt(endMinutes));
 
-      const parseTimeToDate = (parts: RegExpMatchArray) => {
-        let h = Number(parts[1]);
-        const m = Number(parts[2]);
-        const p = parts[3]?.toUpperCase();
-        if (p === 'PM' && h !== 12) h += 12;
-        if (p === 'AM' && h === 12) h = 0;
-        const d = new Date();
-        d.setHours(h, m, 0, 0);
-        return d;
-      };
-
-      const { notificationIds } = await scheduleAlarmSet(
-        parseTimeToDate(startParts),
-        parseTimeToDate(endParts),
-        target.interval
-      );
-
+      const { notificationIds } = await scheduleAlarmSet(startDate, endDate, target.interval);
       setAlarms((prev) =>
-        prev.map((a) =>
-          a.id === id ? { ...a, active: true, notificationIds } : a
-        )
+        prev.map((a) => (a.id === id ? { ...a, active: true, notificationIds } : a))
       );
     }
   };
 
-  const confirmDeleteAlarmSet = (id: string) => {
+
+const confirmDeleteAlarmSet = (id: string) => {
     Alert.alert(
-      'Delete alarm set?',
-      'This will remove entire batch.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            const target = alarms.find((a) => a.id === id);
-            if (target && target.notificationIds) {
-              await cancelAlarmSet(target.notificationIds);
-            }
-            setAlarms((prev) => prev.filter((a) => a.id !== id));
-            if (editingAlarm?.id === id) {
-              setEditingAlarm(null);
-            }
-          },
-        },
-      ],
-      { cancelable: true }
-    );
-  };
+        "Delete alarm set?",
+        "This will remove entire batch.",
+        [
+            {
+                text: "Cancel", style: "cancel"},
+            {
+                text: "Delete",
+                style: "destructive",
+                onPress: async () => {
+                  const target = alarms.find((a) => a.id === id);
+                  if (target && target.notificationIds) {
+                    await cancelAlarmSet(target.notificationIds);
+                  }
+                  setAlarms(prev => prev.filter(a => a.id !== id));
+                },
+            },
+        ],
+        {cancelable: true}
+      );
 
-  const editInitialStart = React.useMemo(() => {
-    if (!editingAlarm) return new Date();
-    const parts = editingAlarm.start.match(/(\d+):(\d+)\s?(AM|PM)?/i);
-    if (!parts) return new Date();
-    let h = Number(parts[1]);
-    const m = Number(parts[2]);
-    const p = parts[3]?.toUpperCase();
-    if (p === 'PM' && h !== 12) h += 12;
-    if (p === 'AM' && h === 12) h = 0;
-    const d = new Date();
-    d.setHours(h, m, 0, 0);
-    return d;
-  }, [editingAlarm]);
-
-  const editInitialEnd = React.useMemo(() => {
-    if (!editingAlarm) return new Date();
-    const parts = editingAlarm.end.match(/(\d+):(\d+)\s?(AM|PM)?/i);
-    if (!parts) return new Date();
-    let h = Number(parts[1]);
-    const m = Number(parts[2]);
-    const p = parts[3]?.toUpperCase();
-    if (p === 'PM' && h !== 12) h += 12;
-    if (p === 'AM' && h === 12) h = 0;
-    const d = new Date();
-    d.setHours(h, m, 0, 0);
-    return d;
-  }, [editingAlarm]);
+    };
 
   const intervalOptions = [1, 2, 3, 5, 10, 15, 20, 30];
 
@@ -472,18 +211,19 @@ export default function App() {
     <View style={styles.container}>
       <Text style={styles.title}>Alarm Flow</Text>
 
+      {/* Alarms List */}
       <FlatList
         data={alarms}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.alarmItem}
-            onPress={() => openEditAlarmSet(item)}
           >
             <Switch
               value={item.active}
               onValueChange={() => toggleAlarmSet(item.id)}
             />
+            {/* summarized alarm text */}
             <Text style={styles.alarmText}>
               Start Time: {item.start} {'\n'}
               End Time: {item.end} {'\n'}
@@ -502,6 +242,7 @@ export default function App() {
         ListEmptyComponent={<Text style={styles.emptyText}>No alarms yet</Text>}
       />
 
+      {/*Start time picker*/}
       <View style={styles.summary}>
         <Text style={styles.summaryLabel}>Start Time</Text>
         <TouchableOpacity onPress={() => setShowStartPicker(true)}>
@@ -510,6 +251,7 @@ export default function App() {
           </Text>
         </TouchableOpacity>
 
+        {/* end time picker */}
         <Text style={styles.summaryLabel}>End Time</Text>
         <TouchableOpacity onPress={() => setShowEndPicker(true)}>
           <Text style={styles.timeText}>
@@ -517,6 +259,7 @@ export default function App() {
           </Text>
         </TouchableOpacity>
 
+        {/* interval picker */}
         <Text style={styles.summaryLabel}>Interval</Text>
         <TouchableOpacity
           onPress={() => setShowIntervalPicker(true)}
@@ -532,6 +275,7 @@ export default function App() {
         color="#4CAF50"
       />
 
+      {/* Time Pickers */}
       {showStartPicker && (
         <DateTimePicker
           value={startTime}
@@ -578,16 +322,6 @@ export default function App() {
           </TouchableOpacity>
         </View>
       )}
-
-      {/* Edit Modal — slides up over the screen when an alarm row is tapped */}
-      <EditModal
-        visible={editingAlarm !== null}
-        initialStart={editInitialStart}
-        initialEnd={editInitialEnd}
-        initialInterval={editingAlarm?.interval ?? 10}
-        onSave={saveEditAlarmSetFromModal}
-        onCancel={() => setEditingAlarm(null)}
-      />
     </View>
   );
 }
