@@ -309,34 +309,35 @@ export default function App() {
   }, []);
 
   const CreateIntervalAlarms = async () => {
-    const allowed = await requestAlarmPermissions();
-    if (!allowed) return;
+  const allowed = await requestAlarmPermissions();
+  if (!allowed) return;
 
-    try {
-      const { count, notificationIds } = await scheduleAlarmSet(
-        startTime,
-        endTime,
-        intervalMinutes
-      );
+  try {
+    const { count, notificationIds } = await scheduleAlarmSet(
+      startTime,
+      endTime,
+      intervalMinutes
+    );
 
-      // {/*set alarm*/} //should not be in CreateIntervalAlarms
-      const newAlarmSet: AlarmSet = {
-        id: Date.now().toString(),
-        start: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        end: endTime.toLocaleTimeString([],     { hour: '2-digit', minute: '2-digit' }),
-        interval: intervalMinutes,
-        count,
-        active: true,
-        notificationIds,
-      };
+    const newAlarmSet: AlarmSet = {
+      id: Date.now().toString(),
+      start: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      end: endTime.toLocaleTimeString([],     { hour: '2-digit', minute: '2-digit' }),
+      interval: intervalMinutes,
+      count,
+      active: true,
+      notificationIds,
+    };
 
-      setAlarms((prev) => [...prev, newAlarmSet]);
-      Alert.alert('Alarms Created!', `${count} alarms would be scheduled!`);
-    } catch (e) {
-      console.log('Failed to schedule alarms', e);
-      Alert.alert('Error', 'Could not schedule alarms. Check permissions and try again.');
-    }
-  };
+    setAlarms((prev) => [...prev, newAlarmSet]);
+    Alert.alert('Alarms Created!', `${count} alarms would be scheduled!`);
+  } catch (e: any) {
+    console.log('Failed to schedule alarms', e);
+
+    Alert.alert('Error', String(e?.message ?? e));
+  }
+};
+
 
   const openEditAlarmSet = (alarm: AlarmSet) => {
     const today = new Date();
