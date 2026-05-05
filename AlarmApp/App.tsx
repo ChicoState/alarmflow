@@ -9,9 +9,9 @@ import {
   Switch,
   Alert,
   Platform,
-  Modal,               // overlay for edit form
+  Modal,                // overlay for edit form
   KeyboardAvoidingView, // keeps pickers visible
-  Pressable,           // tap-to-dismiss
+  Pressable,            // tap-to-dismiss
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -35,7 +35,7 @@ import {
 
 interface AlarmSet {
   id: string;
-  start: string;            
+  start: string;
   end: string;
   interval: number;        // minutes
   count: number;           // num of alarms
@@ -252,7 +252,8 @@ export default function App() {
   const [showIntervalPicker, setShowIntervalPicker] = useState<boolean>(false);
   const [editingAlarmId, setEditingAlarmId] = useState<string | null>(null);
 
-  // NEW: store the full alarm object being edited so the modal has its values.
+  // store the full alarm object being edited so the modal has its values.
+  // null means the modal is closed.
   const [editingAlarm, setEditingAlarm] = useState<AlarmSet | null>(null);
 
   const [isLoaded, setIsLoaded] = useState(false);
@@ -397,11 +398,11 @@ export default function App() {
       };
 
       const { notificationIds } = await scheduleAlarmSet(
-          parseTimeToDate(startParts), 
-          parseTimeToDate(endParts), 
+          parseTimeToDate(startParts),
+          parseTimeToDate(endParts),
           target.interval
       );
-      
+
       setAlarms((prev) =>
         prev.map((a) => (a.id === id ? { ...a, active: true, notificationIds } : a))
       );
@@ -571,6 +572,7 @@ const confirmDeleteAlarmSet = (id: string) => {
         </View>
       )}
 
+      {/* Edit Modal — slides up over the screen when an alarm row is tapped */}
       <EditModal
         visible={editingAlarm !== null}
         initialStart={editInitialStart}
