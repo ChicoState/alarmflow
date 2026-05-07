@@ -17,7 +17,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 // local
 import styles from "./styles.js"
 import SOUND from "./Sound.tsx"
-import { isEnabled } from 'react-native/Libraries/Performance/Systrace';
+
 
 interface AlarmSet {
   id: string;
