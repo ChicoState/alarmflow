@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
@@ -30,6 +30,7 @@ interface AlarmSet {
 
 
 export default function App() {
+  // repeating alarms
   const [alarms,    setAlarms]    = useState<AlarmSet[]>([]);
   const [startTime, setStartTime] = useState<Date>(new Date());
   const [endTime, setEndTime] = useState<Date>(() => {
@@ -45,11 +46,10 @@ export default function App() {
   const [showAlarmModal, setShowAlarmModal] = useState(false);
   const [intervalDropdownOpen, setIntervalDropdownOpen] = useState(false);
 
-  // single alarm
+  // single alarms
   const [alarmTime, setAlarmTime] = useState<Date>(new Date());
   const [showSingleAlarmPicker, setShowSingleAlarmPicker] = useState<boolean>(false);
   const [showSingleAlarmModal, setShowSingleAlarmModal] = useState(false);
-  const [intMinSingleAlarm, setIntMinSingleAlarm] = useState<number>(0);
 
   // current time
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
@@ -306,6 +306,34 @@ const confirmDeleteAlarmSet = (id: string) => {
 
   const intervalOptions = [1, 2, 3, 5, 10, 15, 20, 30];
 
+  // REPEATING ALARM
+  const onStartTimeUpdate = useCallback((event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android'){
+      setShowStartPicker(false);
+    }
+    if (selectedDate){
+      setStartTime(selectedDate);
+    }
+  }, []);
+  const onEndTimeUpdate = useCallback((event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android'){
+      setShowEndPicker(false);
+    }
+    if (selectedDate){
+      setEndTime(selectedDate);
+    }
+  }, []);
+  // SINGLE ALARM
+  const onSingleAlarmTimeUpdate = useCallback((event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android'){
+      setShowSingleAlarmPicker(false);
+    }
+    if (selectedDate){
+      setAlarmTime(selectedDate);
+    }
+  }, []);
+
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Alarm Flow</Text>
@@ -483,22 +511,7 @@ const confirmDeleteAlarmSet = (id: string) => {
             value={startTime}
             mode="time"
             is24Hour={false}
-            onChange={(event, selectedDate) => {
-              setShowStartPicker(Platform.OS === 'ios');
-              if (selectedDate) setStartTime(selectedDate);
-            }}
-          />
-        )}
-
-        {showSingleAlarmPicker && (
-          <DateTimePicker
-            value={alarmTime}
-            mode="time"
-            is24Hour={false}
-            onChange={(event, selectedDate) => {
-              setShowSingleAlarmPicker(Platform.OS === 'ios');
-              if (selectedDate) setAlarmTime(selectedDate);
-            }}
+            onChange={onStartTimeUpdate}
           />
         )}
 
@@ -507,10 +520,16 @@ const confirmDeleteAlarmSet = (id: string) => {
             value={endTime}
             mode="time"
             is24Hour={false}
-            onChange={(event, selectedDate) => {
-              setShowEndPicker(Platform.OS === 'ios');
-              if (selectedDate) setEndTime(selectedDate);
-            }}
+            onChange={onEndTimeUpdate}
+          />
+        )}
+
+        {showSingleAlarmPicker && (
+          <DateTimePicker
+            value={alarmTime}
+            mode="time"
+            is24Hour={false}
+            onChange={onSingleAlarmTimeUpdate}
           />
         )}
 
@@ -549,7 +568,6 @@ const confirmDeleteAlarmSet = (id: string) => {
             source={require('./assets/repeat_icon.png')}
             style={styles.buttonImageIcon}
           />
-          {/*<Text style={styles.fabText}>R</Text>*/}
         </TouchableOpacity>
 
         {/* current time */}
@@ -569,7 +587,6 @@ const confirmDeleteAlarmSet = (id: string) => {
             source={require('./assets/single_icon.png')}
             style={styles.buttonImageIcon}
           />
-          {/*<Text style={styles.fabText}>1</Text>*/}
         </TouchableOpacity>
       </View>
     </View>
