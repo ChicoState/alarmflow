@@ -10,12 +10,14 @@ import {
   Alert,
   Platform,
   Modal,
+  Image
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 // local
 import styles from "./styles.js"
 import SOUND from "./Sound.tsx"
+import { isEnabled } from 'react-native/Libraries/Performance/Systrace';
 
 interface AlarmSet {
   id: string;
@@ -47,6 +49,10 @@ export default function App() {
   const [alarmTime, setAlarmTime] = useState<Date>(new Date());
   const [showSingleAlarmPicker, setShowSingleAlarmPicker] = useState<boolean>(false);
   const [showSingleAlarmModal, setShowSingleAlarmModal] = useState(false);
+  const [intMinSingleAlarm, setIntMinSingleAlarm] = useState<number>(0);
+
+  // current time
+  const [currentTime, setCurrentTime] = useState<Date>(new Date());
 
   //guard against overlapping alarms
   const lastFiredRef = React.useRef<Record<string, string>>({});
@@ -56,6 +62,9 @@ export default function App() {
     const interval = setInterval(() => {
       const now = new Date();
       const nowStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      // set current time
+      setCurrentTime(now);
 
       for (const set of alarms) {
         if (!set.active) continue;
@@ -194,13 +203,17 @@ export default function App() {
     setEditingAlarmId(alarm.id);
     setStartTime(start);
     setEndTime(end);
-    setIntervalMinutes(alarm.interval);
 
     // model choice
     if (startHour == endHour && startMinute == endMinute && alarm.interval == 0){
+      // SINGLE ALARM
       setShowSingleAlarmModal(true);
     }
     else {
+      // REPEATING ALARM
+      // update interval ONLY on repeating alarm to prevent
+      //   '0 min' interval bugs in single alarm
+      setIntervalMinutes(alarm.interval);
       setShowAlarmModal(true);
     }
   };
@@ -307,6 +320,8 @@ const confirmDeleteAlarmSet = (id: string) => {
             onPress={() => openEditAlarmSet(item)}
           >
             <Switch
+              trackColor={{false: '#bbbbbb', true: '#8ec4f1'}}
+              thumbColor={!item.active? '#fffffe' : '#2785d1'}
               value={item.active}
               onValueChange={() => toggleAlarmSet(item.id)}
             />
@@ -530,8 +545,17 @@ const confirmDeleteAlarmSet = (id: string) => {
             setShowAlarmModal(true);
           }}
         > 
-          <Text style={styles.fabText}>R</Text>
+          <Image
+            source={require('./assets/repeat_icon.png')}
+            style={styles.buttonImageIcon}
+          />
+          {/*<Text style={styles.fabText}>R</Text>*/}
         </TouchableOpacity>
+
+        {/* current time */}
+        <Text style={styles.timeTitle}>
+          {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        </Text> 
 
         {/* R button */}
         <TouchableOpacity 
@@ -541,7 +565,11 @@ const confirmDeleteAlarmSet = (id: string) => {
             setShowSingleAlarmModal(true);
           }}
         > 
-          <Text style={styles.fabText}>1</Text>
+          <Image
+            source={require('./assets/single_icon.png')}
+            style={styles.buttonImageIcon}
+          />
+          {/*<Text style={styles.fabText}>1</Text>*/}
         </TouchableOpacity>
       </View>
     </View>
