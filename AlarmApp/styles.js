@@ -33,21 +33,21 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
 
-    //delete button for each alarm batch/set
-    deleteButton: {
-      paddingHorizontal: 14,
-      paddingVertical: 10,
-      borderRadius: 8,
-      borderWidth: 1,
-      borderColor: '#fff', //white border
-      backgroundColor: '#d32f2f', //red fill
-    },
+  //delete button for each alarm batch/set
+  deleteButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#fff', //white border
+    backgroundColor: '#d32f2f', //red fill
+  },
 
-    deleteButtonText: {
-      fontWeight: '600',
-      color: '#fff',
-      fontSize: 15,
-    },
+  deleteButtonText: {
+    fontWeight: '600',
+    color: '#fff',
+    fontSize: 15,
+  },
 
   emptyText: { 
     textAlign: 'center', 
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 30,
     right: 30,
-    backgroundColor: 'green',
+    backgroundColor: '#2785d1',
     width: 60,
     height: 60,
     borderRadius: 30,
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 30,
     left: 30,
-    backgroundColor: 'green',
+    backgroundColor: '#2785d1',
     width: 60,
     height: 60,
     borderRadius: 30,
