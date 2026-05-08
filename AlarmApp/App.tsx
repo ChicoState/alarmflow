@@ -237,6 +237,7 @@ export default function App() {
   const [showEndPicker, setShowEndPicker] = useState<boolean>(false);
   const [showIntervalPicker, setShowIntervalPicker] = useState<boolean>(false);
   const [editingAlarmId, setEditingAlarmId] = useState<string | null>(null);
+  const [isLoaded, setIsLoaded] = useState<boolean>(false);
 
   // store the full alarm object being edited 
   // null means the modal is closed.
