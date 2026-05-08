@@ -17,39 +17,24 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 
 import styles from "./styles.js"
 
-// local
-import SOUND from "./Sound.tsx"
 import {
-  SECOND,
-  get_interval_time
-} from "./Time.tsx"
+  createAlarmChannel,
+  requestAlarmPermissions,
+  scheduleAlarmSet,
+  cancelAlarmSet,
+  registerForegroundHandler,
+} from './AlarmScheduler';
 
 
 interface AlarmSet {
   id: string;
-  start: string;           
+  start: string;
   end: string;
   interval: number;        // minutes
   count: number;           // num of alarms
   active: boolean;
+  notificationIds?: string[]; // Added for OS scheduling
 }
-
-
-function check_time(current_time: Date, alarm_time: Date): boolean {
-  let CT: Date = current_time;    // current time
-  let AT: Date = alarm_time;      // alarm time
-
-  // alarm should go off when both times match
-  if(CT.getHours() === AT.getHours()){
-    if(CT.getMinutes() === AT.getMinutes()){
-      return true;
-    }
-  }
-
-  // the alarm should NOT go off when they are different
-  return false;
-}
-
 
 interface EditModalProps {
   visible: boolean;
@@ -60,6 +45,7 @@ interface EditModalProps {
   onSave: (start: Date, end: Date, interval: number) => void;
   onCancel: () => void;
 }
+
 
 function EditModal({
   visible,
@@ -338,21 +324,32 @@ export default function App() {
     return () => clearInterval(interval);
   }, [alarms]);
 
-  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    const init = async () => {
+      await createAlarmChannel();
+      await requestAlarmPermissions();
+    };
+    init();
+
+    // Register the foreground event handler so taps/dismissals stop the
+    // looping alarm sound while the app is open. (Background events are
+    // registered in index.js.)
+    const unsubscribe = registerForegroundHandler();
+    return unsubscribe;
+  }, []);
 
   // save alarms
   useEffect(() => {
     if (!isLoaded) return;
 
-    const saveAlarms = async () => {
-      try { // save to alarms set
-        await AsyncStorage.setItem('ALARMS', JSON.stringify(alarms));
-      } catch (e) {
-        console.log('Failed to save alarms', e);
-      }
-    };
+    const handle = setTimeout(() => {
+      AsyncStorage.setItem('ALARMS', JSON.stringify(alarms)).catch((e) =>
+        console.log('Failed to save alarms', e)
+      );
+    }, 250);
 
-    saveAlarms();
+    return () => clearTimeout(handle);
   }, [alarms, isLoaded]);
 
   // load alarms
@@ -373,18 +370,17 @@ export default function App() {
     loadAlarms();
   }, []);
 
-  const CreateIntervalAlarms = () => {
-    let current = new Date(startTime);
-    const end = new Date(endTime);
-    const intervalMs = intervalMinutes * 60 * 1000;
-    let count = 0;
+  const CreateIntervalAlarms = async () => {
+  const allowed = await requestAlarmPermissions();
+  if (!allowed) return;
 
-    while (current <= end) {
-      count++;
-      current = new Date(current.getTime() + intervalMs);
-    }
+  try {
+    const { count, notificationIds } = await scheduleAlarmSet(
+      startTime,
+      endTime,
+      intervalMinutes
+    );
 
-    // {/*set alarm*/} //should not be in CreateIntervalAlarms
     const newAlarmSet: AlarmSet = {
       id: Date.now().toString(),
       start: startTime.toLocaleTimeString([], timeLocaleOpts),
@@ -392,11 +388,18 @@ export default function App() {
       interval: intervalMinutes,
       count,
       active: true,
+      notificationIds,
     };
 
     setAlarms((prev) => [...prev, newAlarmSet]);
     Alert.alert('Alarms Created!', `${count} alarms would be scheduled!`);
-  };
+  } catch (e: any) {
+    console.log('Failed to schedule alarms', e);
+
+    Alert.alert('Error', String(e?.message ?? e));
+  }
+};
+
 
   const openEditAlarmSet = (alarm: AlarmSet) => {
     const today = new Date();
@@ -430,7 +433,7 @@ export default function App() {
 
     const end = new Date(today);
     end.setHours(endHour, endMinute, 0, 0);
-    
+
     // set editing state
     setEditingAlarmId(alarm.id);
     setStartTime(start);
@@ -505,11 +508,35 @@ export default function App() {
     Alert.alert("Updated", "Alarm set updated.");
   };
 
-// Issues here -  something with ID string/integers.
-  const toggleAlarmSet = (id: string) => {
-    setAlarms((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, active: !a.active } : a))
-    );
+  const toggleAlarmSet = async (id: string) => {
+    const target = alarms.find((a) => a.id === id);
+    if (!target) return;
+
+    if (target.active) {
+      if (target.notificationIds) {
+        await cancelAlarmSet(target.notificationIds);
+      }
+      setAlarms((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, active: false, notificationIds: [] } : a))
+      );
+    } else {
+      const allowed = await requestAlarmPermissions();
+      if (!allowed) return;
+
+      // Create temporary dates based on the stored local time strings to reschedule
+      const startDate = new Date();
+      const [startHours, startMinutes] = target.start.split(/[: ]/);
+      startDate.setHours(target.start.includes('PM') && startHours !== '12' ? parseInt(startHours) + 12 : parseInt(startHours), parseInt(startMinutes));
+
+      const endDate = new Date();
+      const [endHours, endMinutes] = target.end.split(/[: ]/);
+      endDate.setHours(target.end.includes('PM') && endHours !== '12' ? parseInt(endHours) + 12 : parseInt(endHours), parseInt(endMinutes));
+
+      const { notificationIds } = await scheduleAlarmSet(startDate, endDate, target.interval);
+      setAlarms((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, active: true, notificationIds } : a))
+      );
+    }
   };
 
 
@@ -523,7 +550,11 @@ const confirmDeleteAlarmSet = (id: string) => {
             {
                 text: "Delete",
                 style: "destructive",
-                onPress: () => {
+                onPress: async () => {
+                  const target = alarms.find((a) => a.id === id);
+                  if (target && target.notificationIds) {
+                    await cancelAlarmSet(target.notificationIds);
+                  }
                   setAlarms(prev => prev.filter(a => a.id !== id));
                   if (editingAlarmId === id) {
                     setEditingAlarmId(null);
