@@ -262,19 +262,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 
-  fab: {
-    position: 'absolute',
-    bottom: 80,
-    right: -2,
-    backgroundColor: '#2196f3', //Recycling bin blue
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 5,
-  },
-
   fabLeft: {
     position: 'absolute',
     bottom: 45,
