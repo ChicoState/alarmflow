@@ -245,6 +245,11 @@ export default function App() {
   // 24hour  toggle
   const [use24Hour, setUse24Hour] = useState<boolean>(false);
 
+  // tracks whether the initial AsyncStorage load has completed.
+  // The "save alarms" effect guards on this so it does NOT overwrite
+  // the persisted list with the initial empty [] before load finishes.
+  const [isLoaded, setIsLoaded] = useState<boolean>(false);
+
   const timeLocaleOpts = use24Hour
     ? { hour: '2-digit' as const, minute: '2-digit' as const, hour12: false }
     : { hour: '2-digit' as const, minute: '2-digit' as const };
