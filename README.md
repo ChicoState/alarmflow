@@ -1,5 +1,7 @@
 # AlarmFlow
 
+[![CI](https://github.com/ChicoState/alarmflow/actions/workflows/ci.yml/badge.svg)](https://github.com/ChicoState/alarmflow/actions/workflows/ci.yml)
+
 This is a guide that explains how to set up a React Native development environment using Android Studio
 
 ---

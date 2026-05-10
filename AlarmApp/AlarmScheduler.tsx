@@ -283,11 +283,14 @@ export async function scheduleAlarmSet(
   let current = new Date(startDate);
   const now = Date.now();
 
+  // REPEAT ALARM
   let scheduledCount = 0;
   let index = 0;
   while (current <= endDate) {
     // Only schedule future alarms (skip times that already passed)
+    console.log("current <= endDate");
     if (current.getTime() > now) {
+      console.log('triggering...');
       const trigger: TimestampTrigger = {
         type: TriggerType.TIMESTAMP,
         timestamp: current.getTime(),
@@ -343,6 +346,55 @@ export async function scheduleAlarmSet(
 
     index++;
     current = new Date(current.getTime() + intervalMs);
+  }
+
+  // SINGLE ALARM
+  if (startDate == endDate) {
+    const trigger: TimestampTrigger = {
+      type: TriggerType.TIMESTAMP,
+      timestamp: current.getTime(),
+      alarmManager: {
+        allowWhileIdle: true, // fires during Doze mode
+      },
+    };
+    const timeLabel = current.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    const id = await notifee.createTriggerNotification({
+      title: 'Alarm Flow',
+      body: `Alarm #${0 + index} — ${timeLabel}`,
+      android: {
+        channelId: CHANNEL_ID,
+        importance: AndroidImportance.HIGH,
+        category: AndroidCategory.ALARM,
+        visibility: AndroidVisibility.PUBLIC,
+
+        // RING, don't ping ----------------------------------------
+        sound: 'default',
+        loopSound: true,
+        // Vibrate in a long pattern so it feels like an alarm
+        vibrationPattern: [300, 500, 300, 500, 300, 500, 300, 500],
+
+        // Persist on screen until dismissed
+        ongoing: true,
+        autoCancel: false,
+
+        // Pop over the lockscreen / wake the device
+        fullScreenAction: { id: 'default' },
+        pressAction: { id: 'default' },
+
+        // Explicit dismiss button — the user-facing way to silence it
+        actions: [
+          {
+            title: 'Dismiss',
+            pressAction: { id: DISMISS_ACTION_ID },
+          },
+        ],
+      },
+    }, trigger, );
+
+    scheduledCount = 1;
   }
 
   return { count: scheduledCount, notificationIds };
