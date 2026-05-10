@@ -85,27 +85,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e0e0e0',
 
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-
-  timeTitle: { 
-    fontSize: 20,
-    fontWeight: '600',
-    textAlign: 'center',
-    alignSelf: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 25,
-    marginVertical: 4,
-    marginBottom: 35,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-
     // slight shadow to make touchable noticable
     shadowColor: 'black',
     shadowOffset: { width: 0, height: 2 },
@@ -120,14 +99,14 @@ const styles = StyleSheet.create({
     fontWeight: '500' 
   },
 
-/* old interval picker, not used
+///* old interval picker, not used
   intervalPicker: {
     marginTop: 20,
     padding: 20,
     backgroundColor: 'red',
     borderRadius: 12,
   },
-*/
+//*/
 
   intervalOption: {
     paddingVertical: 14,
@@ -142,6 +121,65 @@ const styles = StyleSheet.create({
   intervalText: {
     fontSize: 18,
     fontWeight: '500',
+  },
+
+  fab: {
+    position: 'absolute',
+    bottom: 80,
+    right: -2,
+    backgroundColor: '#2196f3', //Recycling bin blue
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+  },
+
+  fabText: {
+    color: 'white',
+    fontSize: 32,
+    fontWeight: 'bold',
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: '#d6ecff', //pale blue
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  modalBox: {
+    width: '85%',
+    backgroundColor: '#faf8f2', //soft paper white
+    borderRadius: 15,
+    padding: 20,
+  },
+
+  dropdownBox: {
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: 'black',
+    borderRadius: 8,
+    marginTop: 5,
+  },
+
+  dropdownItem: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'white'
+  },
+
+  dropdownBox: {
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: 'black',
+    borderRadius: 8,
+    marginTop: 5,
+  },
+
+  dropdownButton: {
+    paddingVertical: 10,
   },
 
   // edit function styles stuff
@@ -263,75 +301,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#fff',
     fontSize: 16,
-  },
-
-  fabLeft: {
-    position: 'absolute',
-    bottom: 45,
-    left: 0,
-    backgroundColor: '#2196f3', //Recycling bin blue
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 5,
-  },
-
-  fabRight: {
-    position: 'absolute',
-    bottom: 45,
-    right: 0,
-    backgroundColor: '#2196f3', //Recycling bin blue
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 5,
-  },
-
-  fabText: {
-    color: 'white',
-    fontSize: 32,
-    fontWeight: 'bold',
-  },
-
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: '#d6ecff', //pale blue
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  modalBox: {
-    width: '85%',
-    backgroundColor: '#faf8f2', //soft paper white
-    borderRadius: 15,
-    padding: 20,
-  },
-
-  buttonImageIcon: {
-    width: 47, 
-    height: 47
-  },
-
-  dropdownBox: {
-    backgroundColor: 'white',
-    borderWidth: 1,
-    borderColor: 'black',
-    borderRadius: 8,
-    marginTop: 5,
-  },
-
-  dropdownItem: {
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: 'white'
-  },
-
-  dropdownButton: {
-    paddingVertical: 10,
   },
 });
 

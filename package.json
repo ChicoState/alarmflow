@@ -1,1 +1,7 @@
-{}
+{
+  "name": "alarmflow",
+  "private": true,
+  "scripts": {
+    "test": "npm --prefix AlarmApp test"
+  }
+}

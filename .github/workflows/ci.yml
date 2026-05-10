@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build-and-test:
+    name: Build and test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            AlarmApp/package-lock.json
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;27.1.12297006"
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install app dependencies
+        run: npm ci
+        working-directory: AlarmApp
+
+      - name: Run tests with coverage
+        run: npm test -- --coverage --coverageReporters=text --coverageReporters=lcov --coverageReporters=cobertura --watchAll=false
+        working-directory: AlarmApp
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jest-coverage
+          path: AlarmApp/coverage
+          if-no-files-found: error
+
+      - name: Build Android debug APK
+        run: ./gradlew assembleDebug
+        working-directory: AlarmApp/android
