@@ -1,0 +1,30 @@
+ <Text style={styles.summaryLabel}>Start Time</Text>
+        <TouchableOpacity onPress={() => setShowStartPicker(true)}>
+          <Text style={styles.timeText}>
+            {startTime.toLocaleTimeString([], timeLocaleOpts)}
+          </Text>
+        </TouchableOpacity>
+
+        {/* end time picker */}
+        <Text style={styles.summaryLabel}>End Time</Text>
+        <TouchableOpacity onPress={() => setShowEndPicker(true)}>
+          <Text style={styles.timeText}>
+            {endTime.toLocaleTimeString([], timeLocaleOpts)}
+          </Text>
+        </TouchableOpacity>
+
+        {/* interval picker */}
+        <Text style={styles.summaryLabel}>Interval</Text>
+        <TouchableOpacity
+          onPress={() => setShowIntervalPicker(true)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.timeText}>Every {intervalMinutes} minutes</Text>
+        </TouchableOpacity>
+      </View>
+
+      <Button
+        title={editingAlarmId ? "Save Edit" : "Create Alarm Set"}
+        onPress={editingAlarmId ? saveEditAlarmSet : CreateIntervalAlarms}
+        color="#4CAF50"
+      />
